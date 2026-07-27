@@ -8,7 +8,7 @@ import DeepDiveTable from './components/DeepDiveTable';
 
 export default function App() {
   const [filters, setFilters] = useState({
-    market: 'UK',
+    market: 'UK - ENGLAND',
     retailer: 'AMAZON',
     category: 'PETCARE',
     brand: 'ALL',
@@ -19,24 +19,25 @@ export default function App() {
   const [resultsData, setResultsData] = useState(null);
   const [loading, setLoading] = useState(false);
 
-  // Fetch baseline on initial load and when filters confirm
-  const fetchBaseline = async () => {
+  // Fetch baseline on initial load or when confirm button is clicked with new filters
+  const fetchBaseline = async (newFilters = filters) => {
     try {
       setLoading(true);
+      setFilters(newFilters);
       const res = await fetch(
-        `/api/baseline?market=${filters.market}&retailer=${filters.retailer}&category=${filters.category}`
+        `/api/baseline?market=${newFilters.market}&retailer=${newFilters.retailer}&category=${newFilters.category}`
       );
       const data = await res.json();
       setBaselineData(data);
 
-      // Auto-run initial optimization with default £15,000,000 budget
+      // Auto-run initial optimization with updated confirmed filters
       runOptimization({
         objective: 'Maximize Sales',
         useGuardrails: false,
         targetMode: 'budget',
         targetValue: 15000000,
         guardrails: {}
-      });
+      }, newFilters);
     } catch (err) {
       console.error('Error fetching baseline data:', err);
     } finally {
@@ -48,14 +49,14 @@ export default function App() {
     fetchBaseline();
   }, []);
 
-  const runOptimization = async (optConfig) => {
+  const runOptimization = async (optConfig, activeFilters = filters) => {
     try {
       setLoading(true);
       const res = await fetch('/api/optimize', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          ...filters,
+          ...activeFilters,
           ...optConfig
         })
       });
@@ -69,11 +70,11 @@ export default function App() {
   };
 
   return (
-    <div className="max-w-7xl mx-auto px-4 py-8">
+    <div className="w-full min-h-screen bg-[#f0f5ff] px-6 py-6">
       
       {/* App Header */}
       <header className="mb-6 flex items-center justify-between">
-        <h1 className="text-3xl font-extrabold text-slate-900 tracking-tight">
+        <h1 className="text-2xl font-extrabold text-slate-900 tracking-tight">
           Media Budget Optimizer
         </h1>
         {loading && (
@@ -86,7 +87,6 @@ export default function App() {
       {/* Filter Bar */}
       <HeaderFilters
         filters={filters}
-        setFilters={setFilters}
         onConfirm={fetchBaseline}
       />
 

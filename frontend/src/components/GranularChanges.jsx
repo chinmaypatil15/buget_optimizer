@@ -9,10 +9,10 @@ import {
   Tooltip,
   Cell
 } from 'recharts';
-import { ChevronDown } from 'lucide-react';
 import MultiSelectDropdown from './MultiSelectDropdown';
 
 const BRAND_OPTIONS = ['Felix', 'Gourmet', 'Purina One', 'Pro Plan', 'Bakers', 'Winalot', 'Dentalife'];
+const GRANULARITY_OPTIONS = ['Aggregated', 'Detailed'];
 
 export default function GranularChanges({ granularSpend, granularSales }) {
   const [selectedBrands, setSelectedBrands] = useState(BRAND_OPTIONS);
@@ -40,7 +40,7 @@ export default function GranularChanges({ granularSpend, granularSales }) {
       <div className="flex flex-wrap items-center gap-4 mb-6">
         
         {/* BRAND MULTI-SELECT DROPDOWN */}
-        <div className="w-48">
+        <div className="w-48 relative z-40">
           <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1">
             Brand
           </label>
@@ -48,26 +48,25 @@ export default function GranularChanges({ granularSpend, granularSales }) {
             compact={true}
             options={BRAND_OPTIONS}
             selected={selectedBrands}
+            showSelectAll={true}
+            showCheckboxes={true}
             onChange={(newSelected) => setSelectedBrands(newSelected)}
           />
         </div>
 
         {/* MEDIA TACTIC GRANULARITY */}
-        <div className="w-52">
+        <div className="w-48 relative z-40">
           <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1">
             Media Tactic Granularity
           </label>
-          <div className="relative">
-            <select
-              value={granularity}
-              onChange={(e) => setGranularity(e.target.value)}
-              className="w-full appearance-none bg-slate-50 border border-slate-300 text-slate-800 py-1.5 px-3 pr-7 rounded-xl font-medium text-xs focus:outline-none focus:ring-2 focus:ring-blue-500"
-            >
-              <option value="Aggregated">Aggregated</option>
-              <option value="Detailed">Detailed</option>
-            </select>
-            <ChevronDown className="w-3.5 h-3.5 text-slate-500 absolute right-2 top-2.5 pointer-events-none" />
-          </div>
+          <MultiSelectDropdown
+            compact={true}
+            options={GRANULARITY_OPTIONS}
+            selected={[granularity]}
+            showSelectAll={false}
+            showCheckboxes={false}
+            onChange={(newSelected) => setGranularity(newSelected[0] || 'Aggregated')}
+          />
         </div>
 
         {/* ABSOLUTE / % TOGGLE */}

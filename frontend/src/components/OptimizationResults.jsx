@@ -16,12 +16,16 @@ export default function OptimizationResults({ resultsData }) {
 
   if (!resultsData) return null;
 
-  const { newMetrics, waterfall, brandSpendSales } = resultsData;
+  const metrics = resultsData.metrics || resultsData.newMetrics || {};
+  const waterfall = resultsData.waterfall || [];
+  const spendComparison = resultsData.spendComparison || resultsData.brandSpendSales || [];
+  const salesComparison = resultsData.salesComparison || resultsData.brandSpendSales || [];
 
   const formatCurrency = (val) =>
     `£${val?.toLocaleString('en-GB', { maximumFractionDigits: 0 })}`;
 
   const renderBadge = (pct) => {
+    if (pct === undefined || pct === null) return null;
     const isPositive = pct >= 0;
     return (
       <div
@@ -41,6 +45,11 @@ export default function OptimizationResults({ resultsData }) {
     );
   };
 
+  const getPct = (primaryKey, fallbackKey) => {
+    if (metrics[primaryKey] !== undefined) return metrics[primaryKey];
+    return metrics[fallbackKey];
+  };
+
   return (
     <div className="mb-8">
       
@@ -49,41 +58,41 @@ export default function OptimizationResults({ resultsData }) {
         <div className="bg-white/90 backdrop-blur-md p-5 rounded-2xl border border-slate-200/80 shadow-sm">
           <div className="text-xs font-semibold text-slate-500 mb-1">New Budget</div>
           <div className="text-2xl font-extrabold text-slate-900">
-            {formatCurrency(newMetrics?.budget)}
+            {formatCurrency(metrics.budget)}
           </div>
-          {renderBadge(newMetrics?.pct_budget)}
+          {renderBadge(getPct('budgetChangePct', 'pct_budget'))}
         </div>
 
         <div className="bg-white/90 backdrop-blur-md p-5 rounded-2xl border border-slate-200/80 shadow-sm">
           <div className="text-xs font-semibold text-slate-500 mb-1">New Total Volume</div>
           <div className="text-2xl font-extrabold text-slate-900">
-            {newMetrics?.volume?.toLocaleString()}
+            {metrics.volume?.toLocaleString()}
           </div>
-          {renderBadge(newMetrics?.pct_volume)}
+          {renderBadge(getPct('volumeChangePct', 'pct_volume'))}
         </div>
 
         <div className="bg-white/90 backdrop-blur-md p-5 rounded-2xl border border-slate-200/80 shadow-sm">
           <div className="text-xs font-semibold text-slate-500 mb-1">New Total Sales</div>
           <div className="text-2xl font-extrabold text-slate-900">
-            {formatCurrency(newMetrics?.sales)}
+            {formatCurrency(metrics.sales)}
           </div>
-          {renderBadge(newMetrics?.pct_sales)}
+          {renderBadge(getPct('salesChangePct', 'pct_sales'))}
         </div>
 
         <div className="bg-white/90 backdrop-blur-md p-5 rounded-2xl border border-slate-200/80 shadow-sm">
           <div className="text-xs font-semibold text-slate-500 mb-1">New Total NNS</div>
           <div className="text-2xl font-extrabold text-slate-900">
-            {formatCurrency(newMetrics?.nns)}
+            {formatCurrency(metrics.nns)}
           </div>
-          {renderBadge(newMetrics?.pct_nns)}
+          {renderBadge(getPct('nnsChangePct', 'pct_nns'))}
         </div>
 
         <div className="bg-white/90 backdrop-blur-md p-5 rounded-2xl border border-slate-200/80 shadow-sm">
           <div className="text-xs font-semibold text-slate-500 mb-1">New ROI</div>
           <div className="text-2xl font-extrabold text-slate-900">
-            {newMetrics?.roi?.toFixed(2)}
+            {metrics.roi?.toFixed(2)}
           </div>
-          {renderBadge(newMetrics?.pct_roi)}
+          {renderBadge(getPct('roiChangePct', 'pct_roi'))}
         </div>
       </div>
 
@@ -148,7 +157,7 @@ export default function OptimizationResults({ resultsData }) {
           </h3>
           <div className="h-64 w-full">
             <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={brandSpendSales}>
+              <BarChart data={spendComparison}>
                 <CartesianGrid strokeDasharray="3 3" />
                 <XAxis dataKey="brand" tick={{ fontSize: 10 }} />
                 <YAxis
@@ -157,7 +166,7 @@ export default function OptimizationResults({ resultsData }) {
                 />
                 <Tooltip formatter={(v) => [formatCurrency(v)]} />
                 <Legend />
-                <Bar dataKey="lastYearBudget" name="Last Year Budget" fill="#93c5fd" radius={[4, 4, 0, 0]} />
+                <Bar dataKey="lastYear" name="Last Year Budget" fill="#93c5fd" radius={[4, 4, 0, 0]} />
                 <Bar dataKey="newBudget" name="New Budget" fill="#2563eb" radius={[4, 4, 0, 0]} />
               </BarChart>
             </ResponsiveContainer>
@@ -171,7 +180,7 @@ export default function OptimizationResults({ resultsData }) {
           </h3>
           <div className="h-64 w-full">
             <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={brandSpendSales}>
+              <BarChart data={salesComparison}>
                 <CartesianGrid strokeDasharray="3 3" />
                 <XAxis dataKey="brand" tick={{ fontSize: 10 }} />
                 <YAxis
@@ -180,8 +189,8 @@ export default function OptimizationResults({ resultsData }) {
                 />
                 <Tooltip formatter={(v) => [formatCurrency(v)]} />
                 <Legend />
-                <Bar dataKey="lastYearSales" name="Last Year TOTAL SALES" fill="#93c5fd" radius={[4, 4, 0, 0]} />
-                <Bar dataKey="newSales" name="New TOTAL SALES" fill="#1d4ed8" radius={[4, 4, 0, 0]} />
+                <Bar dataKey="lastYear" name="Last Year TOTAL SALES" fill="#93c5fd" radius={[4, 4, 0, 0]} />
+                <Bar dataKey="newBudget" name="New TOTAL SALES" fill="#1d4ed8" radius={[4, 4, 0, 0]} />
               </BarChart>
             </ResponsiveContainer>
           </div>

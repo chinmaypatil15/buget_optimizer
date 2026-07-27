@@ -20,10 +20,10 @@ export default function LastYearDetails({ baselineData }) {
   const formatCurrency = (val) =>
     `£${val?.toLocaleString('en-GB', { maximumFractionDigits: 0 })}`;
 
-  // Stacked bar dataset format for Recharts
+  // Stacked bar dataset matching Image 2 (single thin vertical bar at 0% position)
   const stackedData = [
     {
-      name: 'Last Year Budget',
+      name: '0%',
       Felix: 14.3,
       Gourmet: 14.3,
       'Purina One': 14.3,
@@ -31,7 +31,11 @@ export default function LastYearDetails({ baselineData }) {
       Bakers: 14.3,
       Winalot: 14.3,
       Dentalife: 14.2
-    }
+    },
+    { name: '25%' },
+    { name: '50%' },
+    { name: '75%' },
+    { name: '100%' }
   ];
 
   const brandColors = {
@@ -94,14 +98,18 @@ export default function LastYearDetails({ baselineData }) {
           <h3 className="text-sm font-bold text-slate-800 mb-4">Last Year Budget - Brand Share</h3>
           <div className="h-64 w-full">
             <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={stackedData} layout="vertical">
-                <CartesianGrid strokeDasharray="3 3" vertical={true} horizontal={false} />
-                <XAxis type="number" domain={[0, 100]} unit="%" tickFormatter={(v) => `${v}%`} />
-                <YAxis type="category" dataKey="name" width={110} />
+              <BarChart data={stackedData}>
+                <CartesianGrid strokeDasharray="3 3" />
+                <XAxis dataKey="name" tick={{ fontSize: 11 }} />
+                <YAxis
+                  domain={[0, 100]}
+                  tick={false}
+                  label={{ value: 'Last Year Budget', angle: -90, position: 'insideLeft', fontSize: 11 }}
+                />
                 <Tooltip formatter={(v) => [`${v}%`, 'Share']} />
                 <Legend />
                 {Object.keys(brandColors).map((brand) => (
-                  <Bar key={brand} dataKey={brand} stackId="a" fill={brandColors[brand]} />
+                  <Bar key={brand} dataKey={brand} stackId="a" fill={brandColors[brand]} barSize={8} />
                 ))}
               </BarChart>
             </ResponsiveContainer>
@@ -117,22 +125,24 @@ export default function LastYearDetails({ baselineData }) {
                 <CartesianGrid strokeDasharray="3 3" />
                 <XAxis
                   dataKey="investmentM"
-                  tick={{ fontSize: 11 }}
+                  tick={{ fontSize: 10 }}
+                  label={{ value: 'Investment', position: 'insideBottom', offset: -2, fontSize: 10 }}
                 />
                 {/* Left YAxis - Incremental Sales */}
                 <YAxis
                   yAxisId="left"
-                  tickFormatter={(v) => `£${(v / 1000000).toFixed(1)}M`}
-                  tick={{ fontSize: 11 }}
-                  label={{ value: 'Incremental Sales', angle: -90, position: 'insideLeft', fontSize: 11 }}
+                  tickFormatter={(v) => `${(v / 1000000).toFixed(1)}M`}
+                  tick={{ fontSize: 10 }}
+                  label={{ value: 'Incremental Sales', angle: -90, position: 'insideLeft', fontSize: 10 }}
                 />
                 {/* Right YAxis - ROI */}
                 <YAxis
                   yAxisId="right"
                   orientation="right"
                   domain={[0, 3.6]}
-                  tick={{ fontSize: 11 }}
-                  label={{ value: 'ROI', angle: 90, position: 'insideRight', fontSize: 11 }}
+                  ticks={[0, 0.9, 1.8, 2.7, 3.6]}
+                  tick={{ fontSize: 10 }}
+                  label={{ value: 'ROI', angle: 90, position: 'insideRight', fontSize: 10 }}
                 />
                 <Tooltip
                   formatter={(value, name) => [
@@ -140,14 +150,14 @@ export default function LastYearDetails({ baselineData }) {
                     name
                   ]}
                 />
-                <Legend />
+                <Legend wrapperStyle={{ paddingTop: 10 }} />
                 <Line
                   yAxisId="left"
                   type="monotone"
                   dataKey="incrementalSales"
                   name="Incremental Sales"
                   stroke="#2563eb"
-                  strokeWidth={2.5}
+                  strokeWidth={2}
                   dot={false}
                 />
                 <Line
@@ -156,7 +166,7 @@ export default function LastYearDetails({ baselineData }) {
                   dataKey="roi"
                   name="ROI"
                   stroke="#ef4444"
-                  strokeWidth={2.5}
+                  strokeWidth={2}
                   dot={false}
                 />
               </ComposedChart>

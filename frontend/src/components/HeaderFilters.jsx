@@ -1,128 +1,144 @@
-import React from 'react';
-import { ChevronDown } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
 import MultiSelectDropdown from './MultiSelectDropdown';
 
+const MARKET_OPTIONS = ['UK-ENGLAND', 'US-USA', 'DE-GERMANY', 'FR-FRANCE', 'IT-ITALY', 'ES-SPAIN'];
+const RETAILER_OPTIONS = ['AMAZON', 'WALMART', 'TESCO', 'ASDA'];
+const CATEGORY_OPTIONS = ['PETCARE', 'COFFEE'];
 const BRAND_OPTIONS = ['Felix', 'Gourmet', 'Purina One', 'Pro Plan', 'Bakers', 'Winalot', 'Dentalife'];
 const MEDIA_LEVER_OPTIONS = ['Search', 'Display'];
 
-export default function HeaderFilters({ filters, setFilters, onConfirm }) {
+export default function HeaderFilters({ filters, onConfirm }) {
+  // Local pending state - changes are only applied when user clicks Confirm
+  const [tempFilters, setTempFilters] = useState(filters);
+
+  useEffect(() => {
+    setTempFilters(filters);
+  }, [filters]);
+
   const handleChange = (key, value) => {
-    setFilters(prev => ({ ...prev, [key]: value }));
+    setTempFilters(prev => ({ ...prev, [key]: value }));
   };
 
-  // Convert filters.brand to array format if it's currently a string like 'ALL'
-  const selectedBrands = Array.isArray(filters.brand)
-    ? filters.brand
-    : filters.brand === 'ALL' || !filters.brand
-      ? BRAND_OPTIONS
-      : [filters.brand];
+  const handleConfirmClick = () => {
+    onConfirm(tempFilters);
+  };
 
-  // Convert filters.mediaLever to array format if it's currently a string like 'ALL'
-  const selectedMediaLevers = Array.isArray(filters.mediaLever)
-    ? filters.mediaLever
-    : filters.mediaLever === 'ALL' || !filters.mediaLever
+  const selectedMarkets = Array.isArray(tempFilters.market)
+    ? tempFilters.market
+    : tempFilters.market
+      ? [MARKET_OPTIONS.find(m => m.split('-')[0].trim() === tempFilters.market) || MARKET_OPTIONS[0]]
+      : [MARKET_OPTIONS[0]];
+
+  const selectedRetailers = Array.isArray(tempFilters.retailer)
+    ? tempFilters.retailer
+    : tempFilters.retailer
+      ? [tempFilters.retailer]
+      : [RETAILER_OPTIONS[0]];
+
+  const selectedCategories = Array.isArray(tempFilters.category)
+    ? tempFilters.category
+    : tempFilters.category
+      ? [tempFilters.category]
+      : [CATEGORY_OPTIONS[0]];
+
+  const selectedBrands = Array.isArray(tempFilters.brand)
+    ? tempFilters.brand
+    : tempFilters.brand === 'ALL' || !tempFilters.brand
+      ? BRAND_OPTIONS
+      : [tempFilters.brand];
+
+  const selectedMediaLevers = Array.isArray(tempFilters.mediaLever)
+    ? tempFilters.mediaLever
+    : tempFilters.mediaLever === 'ALL' || !tempFilters.mediaLever
       ? MEDIA_LEVER_OPTIONS
-      : [filters.mediaLever];
+      : [tempFilters.mediaLever];
 
   return (
-    <div className="bg-white/90 backdrop-blur-md rounded-2xl p-5 shadow-sm border border-slate-200/80 mb-6 relative z-30">
-      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4 items-end">
+    <div className="bg-white/90 backdrop-blur-md rounded-2xl p-5 shadow-sm border border-slate-200/80 mb-6 relative z-30 flex flex-wrap items-end justify-between gap-4">
+      <div className="flex flex-wrap items-end gap-3 sm:gap-4">
 
-        {/* MARKET */}
-        <div>
-          <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">
+        {/* MARKET (No Checkboxes & No Select All) */}
+        <div className="w-36 relative z-40">
+          <label className="block text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-1">
             Market
           </label>
-          <div className="relative">
-            <select
-              value={filters.market}
-              onChange={(e) => handleChange('market', e.target.value)}
-              className="w-full appearance-none bg-slate-50 border border-slate-300 text-slate-800 py-2 px-3 pr-8 rounded-xl font-medium text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-            >
-              <option value="UK">UK-ENGLAND</option>
-              <option value="US">US-USA</option>
-              <option value="DE">DE-GERMANY</option>
-              <option value="FR">FR-FRANCE</option>
-              <option value="IT">IT-ITALY</option>
-              <option value="ES">ES-SPAIN</option>
-            </select>
-            <ChevronDown className="w-4 h-4 text-slate-500 absolute right-2.5 top-3 pointer-events-none" />
-          </div>
+          <MultiSelectDropdown
+            options={MARKET_OPTIONS}
+            selected={selectedMarkets}
+            showSelectAll={false}
+            showCheckboxes={false}
+            onChange={(newSelected) => handleChange('market', newSelected.length > 0 ? newSelected : [MARKET_OPTIONS[0]])}
+          />
         </div>
 
-        {/* RETAILER */}
-        <div>
-          <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">
+        {/* RETAILER (No Checkboxes & No Select All) */}
+        <div className="w-36 relative z-40">
+          <label className="block text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-1">
             Retailer
           </label>
-          <div className="relative">
-            <select
-              value={filters.retailer}
-              onChange={(e) => handleChange('retailer', e.target.value)}
-              className="w-full appearance-none bg-slate-50 border border-slate-300 text-slate-800 py-2 px-3 pr-8 rounded-xl font-medium text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-            >
-              <option value="AMAZON">AMAZON</option>
-              <option value="WALMART">WALMART</option>
-              <option value="TESCO">TESCO</option>
-              <option value="ASDA">ASDA</option>
-            </select>
-            <ChevronDown className="w-4 h-4 text-slate-500 absolute right-2.5 top-3 pointer-events-none" />
-          </div>
+          <MultiSelectDropdown
+            options={RETAILER_OPTIONS}
+            selected={selectedRetailers}
+            showSelectAll={false}
+            showCheckboxes={false}
+            onChange={(newSelected) => handleChange('retailer', newSelected.length > 0 ? newSelected : [RETAILER_OPTIONS[0]])}
+          />
         </div>
 
-        {/* CATEGORY */}
-        <div>
-          <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">
+        {/* CATEGORY (No Checkboxes & No Select All) */}
+        <div className="w-36 relative z-40">
+          <label className="block text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-1">
             Category
           </label>
-          <div className="relative">
-            <select
-              value={filters.category}
-              onChange={(e) => handleChange('category', e.target.value)}
-              className="w-full appearance-none bg-slate-50 border border-slate-300 text-slate-800 py-2 px-3 pr-8 rounded-xl font-medium text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-            >
-              <option value="PETCARE">PETCARE</option>
-              <option value="COFFEE">COFFEE</option>
-            </select>
-            <ChevronDown className="w-4 h-4 text-slate-500 absolute right-2.5 top-3 pointer-events-none" />
-          </div>
+          <MultiSelectDropdown
+            options={CATEGORY_OPTIONS}
+            selected={selectedCategories}
+            showSelectAll={false}
+            showCheckboxes={false}
+            onChange={(newSelected) => handleChange('category', newSelected.length > 0 ? newSelected : [CATEGORY_OPTIONS[0]])}
+          />
         </div>
 
-        {/* BRAND MULTI-SELECT DROPDOWN */}
-        <div className="relative z-40">
-          <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">
+        {/* BRAND (With Checkboxes & Select All) */}
+        <div className="w-36 relative z-40">
+          <label className="block text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-1">
             Brand
           </label>
           <MultiSelectDropdown
             options={BRAND_OPTIONS}
             selected={selectedBrands}
+            showSelectAll={true}
+            showCheckboxes={true}
             onChange={(newSelected) => handleChange('brand', newSelected)}
           />
         </div>
 
-        {/* MEDIA LEVER MULTI-SELECT DROPDOWN */}
-        <div className="relative z-40">
-          <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">
+        {/* MEDIA LEVER (With Checkboxes & Select All) */}
+        <div className="w-36 relative z-40">
+          <label className="block text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-1">
             Media Lever
           </label>
           <MultiSelectDropdown
             options={MEDIA_LEVER_OPTIONS}
             selected={selectedMediaLevers}
+            showSelectAll={true}
+            showCheckboxes={true}
             onChange={(newSelected) => handleChange('mediaLever', newSelected)}
           />
         </div>
 
-        {/* CONFIRM BUTTON */}
-        <div>
-          <button
-            onClick={onConfirm}
-            className="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2.5 px-6 rounded-xl transition-colors shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-          >
-            Confirm
-          </button>
-        </div>
-
       </div>
+
+      {/* CONFIRM BUTTON - Triggers dashboard refresh on click */}
+      <div>
+        <button
+          onClick={handleConfirmClick}
+          className="bg-blue-600 hover:bg-blue-700 active:scale-95 text-white font-semibold py-2 px-8 rounded-xl transition-all shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+        >
+          Confirm
+        </button>
+      </div>
+
     </div>
   );
 }
