@@ -1,43 +1,38 @@
-import React, { useState, useRef, useEffect } from 'react';
-import { ChevronDown, Check } from 'lucide-react';
+import React, { useState } from 'react';
+import {
+  FormControl,
+  Select,
+  MenuItem,
+  Checkbox,
+  ListItemText,
+  Typography,
+  Box
+} from '@mui/material';
+import KeyboardArrowDownIcon from '@mui/icons-material/KeyboardArrowDown';
 
 export default function MultiSelectDropdown({
-  options,
+  options = [],
   selected = [],
   onChange,
-  compact = false,
   showSelectAll = true,
-  showCheckboxes = true
+  showCheckboxes = true,
+  compact = false
 }) {
-  const [isOpen, setIsOpen] = useState(false);
-  const dropdownRef = useRef(null);
+  const isAllSelected = options.length > 0 && selected.length === options.length;
 
-  // Close dropdown on click outside
-  useEffect(() => {
-    const handleClickOutside = (event) => {
-      if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
-        setIsOpen(false);
-      }
-    };
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => document.removeEventListener('mousedown', handleClickOutside);
-  }, []);
-
-  const allSelected = selected.length === options.length;
-
-  const handleToggleAll = () => {
-    if (allSelected) {
+  const handleSelectAllToggle = (e) => {
+    e.stopPropagation();
+    if (isAllSelected) {
       onChange([]);
     } else {
       onChange([...options]);
     }
   };
 
-  const handleToggleOption = (option) => {
+  const handleOptionToggle = (option) => {
     if (!showCheckboxes) {
-      // Single-select mode: select item & close popover
+      // Single select behavior
       onChange([option]);
-      setIsOpen(false);
       return;
     }
 
@@ -48,71 +43,124 @@ export default function MultiSelectDropdown({
     }
   };
 
-  const getDisplayText = () => {
-    if (selected.length === 0) return 'Select';
-    if (selected.length === options.length && showSelectAll) return 'ALL';
+  const renderDisplayText = () => {
+    if (!selected || selected.length === 0) return 'Select';
+    if (showCheckboxes && isAllSelected) return 'ALL';
     if (selected.length === 1) return selected[0];
-    return `${selected.length} selected`;
+    return `${selected.length} Selected`;
   };
 
   return (
-    <div className={`relative w-full ${isOpen ? 'z-50' : 'z-30'}`} ref={dropdownRef}>
-      {/* Target Trigger Button */}
-      <button
-        type="button"
-        onClick={() => setIsOpen(!isOpen)}
-        className={`w-full flex items-center justify-between bg-slate-50 border border-slate-300 text-slate-800 rounded-xl font-medium focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all ${
-          compact ? 'py-1.5 px-3 text-xs' : 'py-2 px-3 text-sm'
-        }`}
+    <FormControl fullWidth size="small">
+      <Select
+        multiple={showCheckboxes}
+        value={showCheckboxes ? selected : (selected[0] || '')}
+        displayEmpty
+        renderValue={() => (
+          <Typography
+            variant="body2"
+            sx={{
+              fontWeight: 600,
+              fontSize: compact ? '0.75rem' : '0.8125rem',
+              color: 'text.primary',
+              whiteSpace: 'nowrap',
+              overflow: 'hidden',
+              textOverflow: 'ellipsis'
+            }}
+          >
+            {renderDisplayText()}
+          </Typography>
+        )}
+        IconComponent={KeyboardArrowDownIcon}
+        sx={{
+          borderRadius: '6px',
+          backgroundColor: '#ffffff',
+          py: compact ? 0.25 : 0.5,
+          '& .MuiSelect-select': {
+            py: compact ? '4px' : '6px',
+            px: '12px'
+          },
+          '& fieldset': {
+            borderColor: '#e2e8f0',
+            borderRadius: '6px'
+          },
+          '&:hover fieldset': {
+            borderColor: '#cbd5e1'
+          },
+          '&.Mui-focused fieldset': {
+            borderColor: '#2563eb'
+          }
+        }}
+        MenuProps={{
+          PaperProps: {
+            sx: {
+              borderRadius: '6px',
+              mt: 0.5,
+              maxHeight: 280,
+              boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05)',
+              border: '1px solid #e2e8f0'
+            }
+          }
+        }}
       >
-        <span className="truncate">{getDisplayText()}</span>
-        <ChevronDown className={`text-slate-500 transition-transform ${compact ? 'w-3.5 h-3.5' : 'w-4 h-4'} ${isOpen ? 'rotate-180' : ''}`} />
-      </button>
+        {/* Select All Option if enabled */}
+        {showSelectAll && showCheckboxes && (
+          <MenuItem
+            onClick={handleSelectAllToggle}
+            sx={{
+              py: 0.5,
+              px: 1.5,
+              borderBottom: '1px solid #f1f5f9',
+              '&:hover': { backgroundColor: '#f8fafc' }
+            }}
+          >
+            <Checkbox
+              checked={isAllSelected}
+              indeterminate={selected.length > 0 && selected.length < options.length}
+              size="small"
+              sx={{ color: '#0f172a', '&.Mui-checked': { color: '#0f172a' }, p: 0.5, mr: 1 }}
+            />
+            <ListItemText
+              primary="Select All"
+              primaryTypographyProps={{ fontSize: '0.8125rem', fontWeight: 700, color: '#0f172a' }}
+            />
+          </MenuItem>
+        )}
 
-      {/* Popover Card */}
-      {isOpen && (
-        <div className="absolute left-0 top-full mt-1 w-full min-w-[190px] bg-white rounded-xl shadow-2xl border border-slate-200/90 z-50 p-2.5">
-          
-          {/* Select All Row (conditional) */}
-          {showSelectAll && showCheckboxes && (
-            <div
-              onClick={handleToggleAll}
-              className="flex items-center gap-3 px-2.5 py-1.5 rounded-lg hover:bg-slate-100/80 cursor-pointer transition-colors mb-1"
+        {/* Option Items */}
+        {options.map((option) => {
+          const isChecked = selected.includes(option);
+          return (
+            <MenuItem
+              key={option}
+              value={option}
+              onClick={() => handleOptionToggle(option)}
+              sx={{
+                py: 0.5,
+                px: 1.5,
+                '&:hover': { backgroundColor: '#f8fafc' },
+                '&.Mui-selected': { backgroundColor: '#f1f5f9' }
+              }}
             >
-              <div className={`w-4 h-4 rounded-md flex items-center justify-center transition-colors ${allSelected ? 'bg-slate-900 text-white' : 'border border-slate-400 bg-white'}`}>
-                {allSelected && <Check className="w-3 h-3 stroke-[3]" />}
-              </div>
-              <span className="text-sm font-semibold text-slate-900">Select All</span>
-            </div>
-          )}
-
-          {/* Individual Options List */}
-          <div className="max-h-56 overflow-y-auto space-y-0.5">
-            {options.map((option) => {
-              const isChecked = selected.includes(option);
-              return (
-                <div
-                  key={option}
-                  onClick={() => handleToggleOption(option)}
-                  className={`flex items-center px-2.5 py-2 rounded-lg cursor-pointer transition-colors ${
-                    isChecked
-                      ? 'bg-blue-50/80 text-blue-700 font-bold'
-                      : 'hover:bg-slate-100/80 text-slate-800 font-medium'
-                  }`}
-                >
-                  {showCheckboxes && (
-                    <div className={`w-4 h-4 mr-3 rounded-md flex items-center justify-center transition-colors ${isChecked ? 'bg-slate-900 text-white' : 'border border-slate-400 bg-white'}`}>
-                      {isChecked && <Check className="w-3 h-3 stroke-[3]" />}
-                    </div>
-                  )}
-                  <span className="text-sm">{option}</span>
-                </div>
-              );
-            })}
-          </div>
-
-        </div>
-      )}
-    </div>
+              {showCheckboxes && (
+                <Checkbox
+                  checked={isChecked}
+                  size="small"
+                  sx={{ color: '#0f172a', '&.Mui-checked': { color: '#0f172a' }, p: 0.5, mr: 1 }}
+                />
+              )}
+              <ListItemText
+                primary={option}
+                primaryTypographyProps={{
+                  fontSize: '0.8125rem',
+                  fontWeight: isChecked ? 600 : 500,
+                  color: isChecked ? '#0f172a' : '#475569'
+                }}
+              />
+            </MenuItem>
+          );
+        })}
+      </Select>
+    </FormControl>
   );
 }

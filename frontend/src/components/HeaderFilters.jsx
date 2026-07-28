@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
+import { Paper, Box, Typography, Button } from '@mui/material';
 import MultiSelectDropdown from './MultiSelectDropdown';
 
-const MARKET_OPTIONS = ['UK-ENGLAND', 'US-USA', 'DE-GERMANY', 'FR-FRANCE', 'IT-ITALY', 'ES-SPAIN'];
+const MARKET_OPTIONS = ['UK', 'US', 'DE', 'FR', 'IT', 'ES'];
 const RETAILER_OPTIONS = ['AMAZON', 'WALMART', 'TESCO', 'ASDA'];
 const CATEGORY_OPTIONS = ['PETCARE', 'COFFEE'];
 const BRAND_OPTIONS = ['Felix', 'Gourmet', 'Purina One', 'Pro Plan', 'Bakers', 'Winalot', 'Dentalife'];
@@ -26,7 +27,7 @@ export default function HeaderFilters({ filters, onConfirm }) {
   const selectedMarkets = Array.isArray(tempFilters.market)
     ? tempFilters.market
     : tempFilters.market
-      ? [MARKET_OPTIONS.find(m => m.split('-')[0].trim() === tempFilters.market) || MARKET_OPTIONS[0]]
+      ? [MARKET_OPTIONS.find(m => m === tempFilters.market) || MARKET_OPTIONS[0]]
       : [MARKET_OPTIONS[0]];
 
   const selectedRetailers = Array.isArray(tempFilters.retailer)
@@ -54,14 +55,32 @@ export default function HeaderFilters({ filters, onConfirm }) {
       : [tempFilters.mediaLever];
 
   return (
-    <div className="bg-white/90 backdrop-blur-md rounded-2xl p-5 shadow-sm border border-slate-200/80 mb-6 relative z-30 flex flex-wrap items-end justify-between gap-4">
-      <div className="flex flex-wrap items-end gap-3 sm:gap-4">
+    <Paper
+      elevation={0}
+      sx={{
+        p: 2.5,
+        mb: 3,
+        display: 'flex',
+        flexWrap: 'wrap',
+        alignItems: 'flex-end',
+        justifyContent: 'space-between',
+        gap: 2,
+        backgroundColor: 'rgba(255, 255, 255, 0.95)',
+        backdropFilter: 'blur(8px)',
+        position: 'relative',
+        zIndex: 30
+      }}
+    >
+      <Box sx={{ display: 'flex', flexWrap: 'wrap', alignItems: 'flex-end', gap: 2 }}>
 
-        {/* MARKET (No Checkboxes & No Select All) */}
-        <div className="w-36 relative z-40">
-          <label className="block text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-1">
-            Market
-          </label>
+        {/* MARKET */}
+        <Box sx={{ width: 144 }}>
+          <Typography
+            variant="caption"
+            sx={{ fontWeight: 700, color: 'text.secondary', letterSpacing: '0.05em', display: 'block', mb: 0.5 }}
+          >
+            MARKET
+          </Typography>
           <MultiSelectDropdown
             options={MARKET_OPTIONS}
             selected={selectedMarkets}
@@ -69,13 +88,16 @@ export default function HeaderFilters({ filters, onConfirm }) {
             showCheckboxes={false}
             onChange={(newSelected) => handleChange('market', newSelected.length > 0 ? newSelected : [MARKET_OPTIONS[0]])}
           />
-        </div>
+        </Box>
 
-        {/* RETAILER (No Checkboxes & No Select All) */}
-        <div className="w-36 relative z-40">
-          <label className="block text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-1">
-            Retailer
-          </label>
+        {/* RETAILER */}
+        <Box sx={{ width: 144 }}>
+          <Typography
+            variant="caption"
+            sx={{ fontWeight: 700, color: 'text.secondary', letterSpacing: '0.05em', display: 'block', mb: 0.5 }}
+          >
+            RETAILER
+          </Typography>
           <MultiSelectDropdown
             options={RETAILER_OPTIONS}
             selected={selectedRetailers}
@@ -83,13 +105,16 @@ export default function HeaderFilters({ filters, onConfirm }) {
             showCheckboxes={false}
             onChange={(newSelected) => handleChange('retailer', newSelected.length > 0 ? newSelected : [RETAILER_OPTIONS[0]])}
           />
-        </div>
+        </Box>
 
-        {/* CATEGORY (No Checkboxes & No Select All) */}
-        <div className="w-36 relative z-40">
-          <label className="block text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-1">
-            Category
-          </label>
+        {/* CATEGORY */}
+        <Box sx={{ width: 144 }}>
+          <Typography
+            variant="caption"
+            sx={{ fontWeight: 700, color: 'text.secondary', letterSpacing: '0.05em', display: 'block', mb: 0.5 }}
+          >
+            CATEGORY
+          </Typography>
           <MultiSelectDropdown
             options={CATEGORY_OPTIONS}
             selected={selectedCategories}
@@ -97,13 +122,16 @@ export default function HeaderFilters({ filters, onConfirm }) {
             showCheckboxes={false}
             onChange={(newSelected) => handleChange('category', newSelected.length > 0 ? newSelected : [CATEGORY_OPTIONS[0]])}
           />
-        </div>
+        </Box>
 
-        {/* BRAND (With Checkboxes & Select All) */}
-        <div className="w-36 relative z-40">
-          <label className="block text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-1">
-            Brand
-          </label>
+        {/* BRAND */}
+        <Box sx={{ width: 144 }}>
+          <Typography
+            variant="caption"
+            sx={{ fontWeight: 700, color: 'text.secondary', letterSpacing: '0.05em', display: 'block', mb: 0.5 }}
+          >
+            BRAND
+          </Typography>
           <MultiSelectDropdown
             options={BRAND_OPTIONS}
             selected={selectedBrands}
@@ -111,13 +139,16 @@ export default function HeaderFilters({ filters, onConfirm }) {
             showCheckboxes={true}
             onChange={(newSelected) => handleChange('brand', newSelected)}
           />
-        </div>
+        </Box>
 
-        {/* MEDIA LEVER (With Checkboxes & Select All) */}
-        <div className="w-36 relative z-40">
-          <label className="block text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-1">
-            Media Lever
-          </label>
+        {/* MEDIA LEVER */}
+        <Box sx={{ width: 144 }}>
+          <Typography
+            variant="caption"
+            sx={{ fontWeight: 700, color: 'text.secondary', letterSpacing: '0.05em', display: 'block', mb: 0.5 }}
+          >
+            MEDIA LEVER
+          </Typography>
           <MultiSelectDropdown
             options={MEDIA_LEVER_OPTIONS}
             selected={selectedMediaLevers}
@@ -125,20 +156,31 @@ export default function HeaderFilters({ filters, onConfirm }) {
             showCheckboxes={true}
             onChange={(newSelected) => handleChange('mediaLever', newSelected)}
           />
-        </div>
+        </Box>
 
-      </div>
+      </Box>
 
-      {/* CONFIRM BUTTON - Triggers dashboard refresh on click */}
-      <div>
-        <button
+      {/* CONFIRM BUTTON */}
+      <Box>
+        <Button
+          variant="contained"
+          color="primary"
           onClick={handleConfirmClick}
-          className="bg-blue-600 hover:bg-blue-700 active:scale-95 text-white font-semibold py-2 px-8 rounded-xl transition-all shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+          sx={{
+            px: 3,
+            py: 0.75,
+            borderRadius: '6px',
+            textTransform: 'none',
+            fontWeight: 700,
+            boxShadow: 'none',
+            bgcolor: '#2563eb',
+            '&:hover': { bgcolor: '#1d4ed8' }
+          }}
         >
           Confirm
-        </button>
-      </div>
+        </Button>
+      </Box>
 
-    </div>
+    </Paper>
   );
 }

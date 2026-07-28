@@ -1,4 +1,5 @@
 import React from 'react';
+import { Paper, Box, Typography } from '@mui/material';
 import {
   ResponsiveContainer,
   ComposedChart,
@@ -11,16 +12,14 @@ import {
   BarChart,
   Bar
 } from 'recharts';
+import { formatCurrency, formatCurrencyShort } from '../utils/currencyHelper';
 
-export default function LastYearDetails({ baselineData }) {
+export default function LastYearDetails({ baselineData, market = 'UK' }) {
   if (!baselineData) return null;
 
   const { metrics, brandShares, saturationCurve } = baselineData;
 
-  const formatCurrency = (val) =>
-    `£${val?.toLocaleString('en-GB', { maximumFractionDigits: 0 })}`;
-
-  // Stacked bar dataset matching Image 2 (single thin vertical bar at 0% position)
+  // Stacked bar dataset matching reference (single thin vertical bar at 0% position)
   const stackedData = [
     {
       name: '0%',
@@ -48,55 +47,98 @@ export default function LastYearDetails({ baselineData }) {
     Dentalife: '#bae6fd'
   };
 
+  const maxInv = saturationCurve && saturationCurve.length > 0
+    ? saturationCurve[saturationCurve.length - 1].investment
+    : 24000000;
+
+  const maxSales = saturationCurve && saturationCurve.length > 0
+    ? Math.max(...saturationCurve.map((p) => p.incrementalSales)) * 1.05
+    : 8500000;
+
   return (
-    <div className="mb-8">
-      <h2 className="text-xl font-bold text-slate-800 mb-4">Last Year Details</h2>
+    <Box sx={{ mb: 4, width: '100%' }}>
+      <Typography variant="h6" sx={{ fontWeight: 700, color: 'text.primary', mb: 2 }}>
+        Last Year Details
+      </Typography>
 
-      {/* 5 KPI Metric Cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4 mb-6">
-        <div className="bg-white/90 backdrop-blur-md p-5 rounded-2xl border border-slate-200/80 shadow-sm">
-          <div className="text-xs font-semibold text-slate-500 mb-1">Last Year Budget</div>
-          <div className="text-2xl font-extrabold text-slate-900">
-            {formatCurrency(metrics?.budget)}
-          </div>
-        </div>
+      {/* 5 KPI Metric Cards Row - 100% Full Width CSS Grid */}
+      <Box
+        sx={{
+          display: 'grid',
+          gridTemplateColumns: {
+            xs: '1fr',
+            sm: 'repeat(2, 1fr)',
+            md: 'repeat(5, 1fr)'
+          },
+          gap: 2,
+          mb: 3,
+          width: '100%'
+        }}
+      >
+        <Paper elevation={0} sx={{ p: 2.5, width: '100%' }}>
+          <Typography variant="caption" sx={{ color: 'text.secondary', fontWeight: 600, display: 'block', mb: 0.5 }}>
+            Last Year Budget
+          </Typography>
+          <Typography variant="h5" sx={{ fontWeight: 800, color: 'text.primary' }}>
+            {formatCurrency(metrics?.budget, market)}
+          </Typography>
+        </Paper>
 
-        <div className="bg-white/90 backdrop-blur-md p-5 rounded-2xl border border-slate-200/80 shadow-sm">
-          <div className="text-xs font-semibold text-slate-500 mb-1">Last Year Total Volume</div>
-          <div className="text-2xl font-extrabold text-slate-900">
+        <Paper elevation={0} sx={{ p: 2.5, width: '100%' }}>
+          <Typography variant="caption" sx={{ color: 'text.secondary', fontWeight: 600, display: 'block', mb: 0.5 }}>
+            Last Year Total Volume
+          </Typography>
+          <Typography variant="h5" sx={{ fontWeight: 800, color: 'text.primary' }}>
             {metrics?.volume?.toLocaleString()}
-          </div>
-        </div>
+          </Typography>
+        </Paper>
 
-        <div className="bg-white/90 backdrop-blur-md p-5 rounded-2xl border border-slate-200/80 shadow-sm">
-          <div className="text-xs font-semibold text-slate-500 mb-1">Last Year Total Sales</div>
-          <div className="text-2xl font-extrabold text-slate-900">
-            {formatCurrency(metrics?.sales)}
-          </div>
-        </div>
+        <Paper elevation={0} sx={{ p: 2.5, width: '100%' }}>
+          <Typography variant="caption" sx={{ color: 'text.secondary', fontWeight: 600, display: 'block', mb: 0.5 }}>
+            Last Year Total Sales
+          </Typography>
+          <Typography variant="h5" sx={{ fontWeight: 800, color: 'text.primary' }}>
+            {formatCurrency(metrics?.sales, market)}
+          </Typography>
+        </Paper>
 
-        <div className="bg-white/90 backdrop-blur-md p-5 rounded-2xl border border-slate-200/80 shadow-sm">
-          <div className="text-xs font-semibold text-slate-500 mb-1">Last Year Total NNS</div>
-          <div className="text-2xl font-extrabold text-slate-900">
-            {formatCurrency(metrics?.nns)}
-          </div>
-        </div>
+        <Paper elevation={0} sx={{ p: 2.5, width: '100%' }}>
+          <Typography variant="caption" sx={{ color: 'text.secondary', fontWeight: 600, display: 'block', mb: 0.5 }}>
+            Last Year Total NNS
+          </Typography>
+          <Typography variant="h5" sx={{ fontWeight: 800, color: 'text.primary' }}>
+            {formatCurrency(metrics?.nns, market)}
+          </Typography>
+        </Paper>
 
-        <div className="bg-white/90 backdrop-blur-md p-5 rounded-2xl border border-slate-200/80 shadow-sm">
-          <div className="text-xs font-semibold text-slate-500 mb-1">Last Year ROI</div>
-          <div className="text-2xl font-extrabold text-slate-900">
+        <Paper elevation={0} sx={{ p: 2.5, width: '100%' }}>
+          <Typography variant="caption" sx={{ color: 'text.secondary', fontWeight: 600, display: 'block', mb: 0.5 }}>
+            Last Year ROI
+          </Typography>
+          <Typography variant="h5" sx={{ fontWeight: 800, color: 'text.primary' }}>
             {metrics?.roi?.toFixed(2)}
-          </div>
-        </div>
-      </div>
+          </Typography>
+        </Paper>
+      </Box>
 
-      {/* 2 Side-by-side Charts */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        
+      {/* 2 Side-by-side Charts - 100% Full Width CSS Grid */}
+      <Box
+        sx={{
+          display: 'grid',
+          gridTemplateColumns: {
+            xs: '1fr',
+            md: '1fr 1fr'
+          },
+          gap: 3,
+          width: '100%'
+        }}
+      >
         {/* Brand Share Chart */}
-        <div className="bg-white/90 backdrop-blur-md p-5 rounded-2xl border border-slate-200/80 shadow-sm">
-          <h3 className="text-sm font-bold text-slate-800 mb-4">Last Year Budget - Brand Share</h3>
-          <div className="h-64 w-full">
+        <Paper elevation={0} sx={{ p: 2.5, width: '100%' }}>
+          <Typography variant="subtitle2" sx={{ fontWeight: 700, color: 'text.primary', mb: 2 }}>
+            Last Year Budget - Brand Share
+          </Typography>
+          <Box sx={{ height: 260, width: '100%' }}>
             <ResponsiveContainer width="100%" height="100%">
               <BarChart data={stackedData}>
                 <CartesianGrid strokeDasharray="3 3" />
@@ -113,29 +155,33 @@ export default function LastYearDetails({ baselineData }) {
                 ))}
               </BarChart>
             </ResponsiveContainer>
-          </div>
-        </div>
+          </Box>
+        </Paper>
 
         {/* Saturation Curve Chart */}
-        <div className="bg-white/90 backdrop-blur-md p-5 rounded-2xl border border-slate-200/80 shadow-sm">
-          <h3 className="text-sm font-bold text-slate-800 mb-4">Saturation Curve</h3>
-          <div className="h-64 w-full">
+        <Paper elevation={0} sx={{ p: 2.5, width: '100%' }}>
+          <Typography variant="subtitle2" sx={{ fontWeight: 700, color: 'text.primary', mb: 2 }}>
+            Saturation Curve
+          </Typography>
+          <Box sx={{ height: 260, width: '100%' }}>
             <ResponsiveContainer width="100%" height="100%">
               <ComposedChart data={saturationCurve}>
                 <CartesianGrid strokeDasharray="3 3" />
                 <XAxis
-                  dataKey="investmentM"
+                  type="number"
+                  dataKey="investment"
+                  domain={[0, maxInv]}
+                  tickFormatter={(v) => formatCurrencyShort(v, market)}
                   tick={{ fontSize: 10 }}
                   label={{ value: 'Investment', position: 'insideBottom', offset: -2, fontSize: 10 }}
                 />
-                {/* Left YAxis - Incremental Sales */}
                 <YAxis
                   yAxisId="left"
-                  tickFormatter={(v) => `${(v / 1000000).toFixed(1)}M`}
+                  domain={[0, maxSales]}
+                  tickFormatter={(v) => formatCurrencyShort(v, market)}
                   tick={{ fontSize: 10 }}
                   label={{ value: 'Incremental Sales', angle: -90, position: 'insideLeft', fontSize: 10 }}
                 />
-                {/* Right YAxis - ROI */}
                 <YAxis
                   yAxisId="right"
                   orientation="right"
@@ -145,10 +191,38 @@ export default function LastYearDetails({ baselineData }) {
                   label={{ value: 'ROI', angle: 90, position: 'insideRight', fontSize: 10 }}
                 />
                 <Tooltip
-                  formatter={(value, name) => [
-                    name === 'Incremental Sales' ? formatCurrency(value) : value,
-                    name
-                  ]}
+                  content={({ active, payload, label }) => {
+                    if (active && payload && payload.length) {
+                      const dataPoint = payload[0].payload;
+                      const inv = dataPoint.investment ?? label;
+                      const sales = dataPoint.incrementalSales;
+                      const roi = dataPoint.roi;
+
+                      return (
+                        <Box
+                          sx={{
+                            bgcolor: '#ffffff',
+                            p: 1.5,
+                            border: '1px solid #cbd5e1',
+                            borderRadius: '4px',
+                            boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)',
+                            minWidth: 170
+                          }}
+                        >
+                          <Typography variant="body2" sx={{ fontWeight: 700, color: '#0f172a', mb: 1 }}>
+                            {typeof inv === 'number' ? Math.round(inv) : inv}
+                          </Typography>
+                          <Typography variant="body2" sx={{ fontWeight: 600, color: '#2563eb', mb: 0.5 }}>
+                            Incremental Sales : {sales !== undefined ? Math.round(sales) : ''}
+                          </Typography>
+                          <Typography variant="body2" sx={{ fontWeight: 600, color: '#ef4444' }}>
+                            ROI : {typeof roi === 'number' ? roi.toFixed(2) : roi}
+                          </Typography>
+                        </Box>
+                      );
+                    }
+                    return null;
+                  }}
                 />
                 <Legend wrapperStyle={{ paddingTop: 10 }} />
                 <Line
@@ -159,6 +233,7 @@ export default function LastYearDetails({ baselineData }) {
                   stroke="#2563eb"
                   strokeWidth={2}
                   dot={false}
+                  activeDot={{ r: 5, fill: '#2563eb', stroke: '#ffffff', strokeWidth: 2 }}
                 />
                 <Line
                   yAxisId="right"
@@ -168,13 +243,13 @@ export default function LastYearDetails({ baselineData }) {
                   stroke="#ef4444"
                   strokeWidth={2}
                   dot={false}
+                  activeDot={{ r: 5, fill: '#ef4444', stroke: '#ffffff', strokeWidth: 2 }}
                 />
               </ComposedChart>
             </ResponsiveContainer>
-          </div>
-        </div>
-
-      </div>
-    </div>
+          </Box>
+        </Paper>
+      </Box>
+    </Box>
   );
 }

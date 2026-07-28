@@ -50,20 +50,25 @@ def get_base_metrics(market, retailer, category):
         "roi": base_roi
     }
 
-def generate_saturation_curve(max_investment=24000000):
+def generate_saturation_curve(selected_budget=12000000.0):
     points = []
-    # Exact 11 ticks matching Image 2: £0.0M, £2.4M, £4.8M, £7.2M, £9.6M, £12.0M, £14.4M, £16.8M, £19.2M, £21.6M, £24.0M
-    ticks = [i * 2400000 for i in range(11)]
+    max_investment = selected_budget * 2.0
+    if max_investment <= 0:
+        max_investment = 24000000.0
+
+    num_points = 101
+    step = max_investment / (num_points - 1)
     
-    s_max = 8500000.0
-    k = 0.00000013
+    # Scale max incremental sales capacity proportionally
+    s_max = selected_budget * 3.5
     
-    for x in ticks:
-        inc_sales = s_max * (1 - math.exp(-k * x))
-        if x > 0:
-            roi_val = min(3.6, max(0.5, 2.1 + 1.55 * math.sin(math.pi * x / max_investment)))
+    for i in range(num_points):
+        x = i * step
+        inc_sales = s_max * (1 - math.exp(-3.0 * x / max_investment)) if max_investment > 0 else 0
+        if x > 0 and max_investment > 0:
+            roi_val = min(3.6, max(0.5, 1.2 + 2.25 * math.sin(math.pi * x / max_investment)))
         else:
-            roi_val = 2.1
+            roi_val = 1.2
         
         points.append({
             "investment": round(x, 2),
@@ -89,8 +94,29 @@ def get_baseline():
     market = request.args.get('market', 'UK')
     retailer = request.args.get('retailer', 'AMAZON')
     category = request.args.get('category', 'PETCARE')
+    brand_param = request.args.get('brand', 'ALL')
+    media_lever = request.args.get('mediaLever', 'ALL')
 
-    metrics = get_base_metrics(market, retailer, category)
+    base_metrics = get_base_metrics(market, retailer, category)
+    
+    # Calculate selected brands count
+    if not brand_param or brand_param == 'ALL':
+        selected_brands_count = len(BRANDS)
+    else:
+        selected_brands_list = [b.strip() for b in brand_param.split(',') if b.strip()]
+        selected_brands_count = max(1, len(selected_brands_list))
+
+    ratio = selected_brands_count / len(BRANDS)
+    
+    # Scale baseline metrics dynamically
+    metrics = {
+        "budget": round(base_metrics["budget"] * ratio, 2),
+        "volume": int(base_metrics["volume"] * ratio),
+        "sales": round(base_metrics["sales"] * ratio, 2),
+        "nns": round(base_metrics["nns"] * ratio, 2),
+        "roi": base_metrics["roi"]
+    }
+
     brand_shares = {
         "Felix": 14.3,
         "Gourmet": 14.3,
@@ -100,7 +126,7 @@ def get_baseline():
         "Winalot": 14.3,
         "Dentalife": 14.2
     }
-    curve = generate_saturation_curve()
+    curve = generate_saturation_curve(metrics["budget"])
 
     return jsonify({
         "metrics": metrics,
@@ -174,14 +200,18 @@ def optimize():
         {"brand": "Dentalife", "lastYear": 3600000, "newBudget": 4381101}
     ]
 
+    # Calculate reallocation shift (Search positive increase, Display negative decrease) matching Image 2
+    spend_shift = 320000.0 * (new_budget / 15000000.0)
+    display_shift = -120000.0 * (new_budget / 15000000.0)
+
     granular_spend = [
-        {"tactic": "Total Search", "value": (new_budget - base_budget) * 0.55},
-        {"tactic": "Total Display", "value": (new_budget - base_budget) * 0.45}
+        {"tactic": "Total Search", "value": round(spend_shift, 2), "pctValue": 8.0},
+        {"tactic": "Total Display", "value": round(display_shift, 2), "pctValue": -5.0}
     ]
 
     granular_sales = [
-        {"tactic": "Total Search", "value": (new_sales - 25200000.0) * 0.60},
-        {"tactic": "Total Display", "value": (new_sales - 25200000.0) * 0.40}
+        {"tactic": "Total Search", "value": round(spend_shift * 2.4, 2), "pctValue": 12.0},
+        {"tactic": "Total Display", "value": round(display_shift * 2.4, 2), "pctValue": -7.5}
     ]
 
     deep_dive = [
@@ -292,6 +322,24 @@ def optimize():
         }
     ]
 
+    scale = new_budget / 15000000.0
+
+    detailed_spend = [
+        {"tactic": "Sponsored Product", "value": round(250000.0 * scale, 2), "pctValue": 12.5},
+        {"tactic": "Sponsored Brand", "value": round(80000.0 * scale, 2), "pctValue": 4.0},
+        {"tactic": "Sponsored Video", "value": round(-30000.0 * scale, 2), "pctValue": -1.5},
+        {"tactic": "Onsite Display", "value": round(90000.0 * scale, 2), "pctValue": 4.5},
+        {"tactic": "Offsite Display", "value": round(-200000.0 * scale, 2), "pctValue": -10.0}
+    ]
+
+    detailed_sales = [
+        {"tactic": "Sponsored Product", "value": round(600000.0 * scale, 2), "pctValue": 25.0},
+        {"tactic": "Sponsored Brand", "value": round(192000.0 * scale, 2), "pctValue": 8.0},
+        {"tactic": "Sponsored Video", "value": round(-72000.0 * scale, 2), "pctValue": -3.0},
+        {"tactic": "Onsite Display", "value": round(216000.0 * scale, 2), "pctValue": 9.0},
+        {"tactic": "Offsite Display", "value": round(-480000.0 * scale, 2), "pctValue": -20.0}
+    ]
+
     return jsonify({
         "metrics": optimized_metrics,
         "waterfall": waterfall,
@@ -299,6 +347,8 @@ def optimize():
         "salesComparison": sales_comparison,
         "granularSpend": granular_spend,
         "granularSales": granular_sales,
+        "detailedSpend": detailed_spend,
+        "detailedSales": detailed_sales,
         "deepDive": deep_dive
     })
 

@@ -1,4 +1,6 @@
 import React from 'react';
+import { Box, Typography, Slider } from '@mui/material';
+import { formatCurrency } from '../utils/currencyHelper';
 
 export default function DualRangeSlider({
   label,
@@ -6,76 +8,106 @@ export default function DualRangeSlider({
   max = 100,
   value = [20, 80],
   onChange,
-  isCurrency = false
+  isCurrency = false,
+  market = 'UK'
 }) {
   const [minVal, maxVal] = value;
-
-  const minPos = ((minVal - min) / (max - min)) * 100;
-  const maxPos = ((maxVal - min) / (max - min)) * 100;
+  const minDistance = isCurrency ? Math.round((max - min) * 0.02) || 100000 : 2;
+  const stepVal = isCurrency ? 100000 : 1;
 
   const formatValue = (val) => {
     if (isCurrency) {
-      return `£${Math.round(val).toLocaleString('en-GB')}`;
+      return formatCurrency(val, market, 0);
     }
     return `${Math.round(val)}%`;
   };
 
-  const handleMinChange = (e) => {
-    const val = Math.min(Number(e.target.value), maxVal - 1);
-    onChange([val, maxVal]);
-  };
+  const handleSliderChange = (event, newValue, activeThumb) => {
+    if (!Array.isArray(newValue)) return;
 
-  const handleMaxChange = (e) => {
-    const val = Math.max(Number(e.target.value), minVal + 1);
-    onChange([minVal, val]);
+    let [newMin, newMax] = newValue;
+    if (newMax - newMin < minDistance) {
+      if (activeThumb === 0) {
+        newMin = Math.min(newMin, max - minDistance);
+        newMax = newMin + minDistance;
+      } else {
+        newMax = Math.max(newMax, min + minDistance);
+        newMin = newMax - minDistance;
+      }
+    }
+    onChange([newMin, newMax]);
   };
 
   return (
-    <div className="flex items-center gap-4 py-1.5">
-      {/* Left Column: Label + Range Subtitle (matching reference screenshot) */}
-      <div className="w-36 shrink-0">
-        <div className="text-xs font-bold text-slate-900 tracking-wider truncate">
+    <Box sx={{ display: 'flex', alignItems: 'flex-start', gap: 2, py: 0.1, width: '100%' }}>
+      {/* Column 1: Label Name */}
+      <Box sx={{ width: 170, flexShrink: 0, pt: 0.1 }}>
+        <Typography
+          variant="caption"
+          sx={{
+            fontSize: '0.75rem',
+            fontWeight: 700,
+            color: 'text.primary',
+            letterSpacing: '0.02em',
+            display: 'block',
+            whiteSpace: 'nowrap',
+            overflow: 'hidden',
+            textOverflow: 'ellipsis'
+          }}
+        >
           {label}
-        </div>
-        <div className="text-[11px] font-normal text-slate-500 mt-0.5">
-          {formatValue(minVal)} to {formatValue(maxVal)}
-        </div>
-      </div>
+        </Typography>
+      </Box>
 
-      {/* Right Column: Dual Handle Track */}
-      <div className="relative flex-1 h-5 flex items-center">
-        {/* Inactive Track */}
-        <div className="absolute w-full h-[4px] bg-slate-300 rounded-full" />
-
-        {/* Active Dark Range Track */}
-        <div
-          className="absolute h-[4px] bg-[#04091e] rounded-full"
-          style={{
-            left: `${minPos}%`,
-            width: `${maxPos - minPos}%`
+      {/* Column 2: Slider Track (Top) + Range Value Text (Bottom) */}
+      <Box sx={{ flexGrow: 1, minWidth: 0, px: 1 }}>
+        <Slider
+          value={value}
+          onChange={handleSliderChange}
+          min={min}
+          max={max}
+          step={stepVal}
+          disableSwap={false}
+          sx={{
+            color: '#0b1329',
+            height: 4,
+            padding: '6px 0 2px 0',
+            width: '100%',
+            '& .MuiSlider-track': {
+              border: 'none',
+              backgroundColor: '#0b1329',
+              height: 4
+            },
+            '& .MuiSlider-rail': {
+              opacity: 1,
+              backgroundColor: '#cbd5e1',
+              height: 4
+            },
+            '& .MuiSlider-thumb': {
+              height: 14,
+              width: 14,
+              backgroundColor: '#ffffff',
+              border: '1.5px solid #0b1329',
+              boxShadow: '0 1px 3px rgba(0, 0, 0, 0.15)',
+              '&:focus, &:hover, &.Mui-active, &.Mui-focusVisible': {
+                boxShadow: '0 0 0 6px rgba(11, 19, 41, 0.16)'
+              }
+            }
           }}
         />
-
-        {/* Min Thumb Input */}
-        <input
-          type="range"
-          min={min}
-          max={max}
-          value={minVal}
-          onChange={handleMinChange}
-          className="absolute w-full h-[4px] appearance-none bg-transparent pointer-events-none z-20 focus:outline-none [&::-webkit-slider-thumb]:pointer-events-auto [&::-webkit-slider-thumb]:w-3.5 [&::-webkit-slider-thumb]:h-3.5 [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-white [&::-webkit-slider-thumb]:border [&::-webkit-slider-thumb]:border-slate-800 [&::-webkit-slider-thumb]:shadow-xs [&::-webkit-slider-thumb]:cursor-pointer"
-        />
-
-        {/* Max Thumb Input */}
-        <input
-          type="range"
-          min={min}
-          max={max}
-          value={maxVal}
-          onChange={handleMaxChange}
-          className="absolute w-full h-[4px] appearance-none bg-transparent pointer-events-none z-30 focus:outline-none [&::-webkit-slider-thumb]:pointer-events-auto [&::-webkit-slider-thumb]:w-3.5 [&::-webkit-slider-thumb]:h-3.5 [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-white [&::-webkit-slider-thumb]:border [&::-webkit-slider-thumb]:border-slate-800 [&::-webkit-slider-thumb]:shadow-xs [&::-webkit-slider-thumb]:cursor-pointer"
-        />
-      </div>
-    </div>
+        <Typography
+          variant="caption"
+          sx={{
+            fontSize: '0.6875rem',
+            fontWeight: 500,
+            color: 'text.secondary',
+            display: 'block',
+            mt: -0.5
+          }}
+        >
+          {formatValue(minVal)} to {formatValue(maxVal)}
+        </Typography>
+      </Box>
+    </Box>
   );
 }
