@@ -13,7 +13,7 @@ import {
 import Visibility from '@mui/icons-material/Visibility';
 import VisibilityOff from '@mui/icons-material/VisibilityOff';
 import LockOutlinedIcon from '@mui/icons-material/LockOutlined';
-import PersonOutlineIcon from '@mui/icons-material/PersonOutline';
+import PersonOutlinedIcon from '@mui/icons-material/PersonOutlined';
 import EmailOutlinedIcon from '@mui/icons-material/EmailOutlined';
 import { useAuth } from '../context/AuthContext';
 
@@ -131,7 +131,7 @@ export default function LoginPage() {
                 InputProps={{
                   startAdornment: (
                     <InputAdornment position="start">
-                      <PersonOutlineIcon fontSize="small" sx={{ color: '#94a3b8' }} />
+                      <PersonOutlinedIcon fontSize="small" sx={{ color: '#94a3b8' }} />
                     </InputAdornment>
                   )
                 }}
@@ -178,7 +178,7 @@ export default function LoginPage() {
               InputProps={{
                 startAdornment: (
                   <InputAdornment position="start">
-                    <PersonOutlineIcon fontSize="small" sx={{ color: '#94a3b8' }} />
+                    <PersonOutlinedIcon fontSize="small" sx={{ color: '#94a3b8' }} />
                   </InputAdornment>
                 )
               }}
