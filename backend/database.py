@@ -58,6 +58,19 @@ def init_db():
         )
     ''')
 
+    # 5. Create users table for Auth System
+    cursor.execute('''
+        CREATE TABLE IF NOT EXISTS users (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            username TEXT UNIQUE NOT NULL,
+            email TEXT UNIQUE NOT NULL,
+            password_hash TEXT NOT NULL,
+            full_name TEXT,
+            role TEXT DEFAULT 'User',
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        )
+    ''')
+
     # Seed data if empty
     cursor.execute("SELECT COUNT(*) FROM filters")
     if cursor.fetchone()[0] == 0:
@@ -83,18 +96,14 @@ def init_db():
             baseline_data
         )
 
-    cursor.execute("SELECT COUNT(*) FROM brand_shares")
+    cursor.execute("SELECT COUNT(*) FROM users")
     if cursor.fetchone()[0] == 0:
-        shares_data = [
-            ('Felix', 14.3),
-            ('Gourmet', 14.3),
-            ('Purina One', 14.3),
-            ('Pro Plan', 14.3),
-            ('Bakers', 14.3),
-            ('Winalot', 14.3),
-            ('Dentalife', 14.2)
-        ]
-        cursor.executemany("INSERT INTO brand_shares (brand_name, share_pct) VALUES (?, ?)", shares_data)
+        from werkzeug.security import generate_password_hash
+        admin_pwd_hash = generate_password_hash("password123")
+        cursor.execute(
+            "INSERT INTO users (username, email, password_hash, full_name, role) VALUES (?, ?, ?, ?, ?)",
+            ("admin", "admin@purina.com", admin_pwd_hash, "Admin User", "Admin")
+        )
 
     conn.commit()
     conn.close()
@@ -158,6 +167,40 @@ def fetch_baseline_from_db(market='UK', retailer='AMAZON', category='PETCARE'):
     }
 
     return metrics, brand_shares
+
+def create_user(username, email, password_hash, full_name="", role="User"):
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    cursor.execute(
+        "INSERT INTO users (username, email, password_hash, full_name, role) VALUES (?, ?, ?, ?, ?)",
+        (username, email, password_hash, full_name, role)
+    )
+    user_id = cursor.lastrowid
+    conn.commit()
+    conn.close()
+    return user_id
+
+def get_user_by_email_or_username(identifier):
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    cursor.execute(
+        "SELECT id, username, email, password_hash, full_name, role FROM users WHERE username = ? OR email = ?",
+        (identifier, identifier)
+    )
+    row = cursor.fetchone()
+    conn.close()
+    return dict(row) if row else None
+
+def get_user_by_id(user_id):
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    cursor.execute(
+        "SELECT id, username, email, full_name, role, created_at FROM users WHERE id = ?",
+        (user_id,)
+    )
+    row = cursor.fetchone()
+    conn.close()
+    return dict(row) if row else None
 
 if __name__ == '__main__':
     init_db()

@@ -1,11 +1,37 @@
 import math
+import jwt
+import datetime
+from werkzeug.security import generate_password_hash, check_password_hash
 from flask import Flask, request, jsonify
-from database import init_db, fetch_filters_from_db, fetch_baseline_from_db
+from database import (
+    init_db,
+    fetch_filters_from_db,
+    fetch_baseline_from_db,
+    create_user,
+    get_user_by_email_or_username,
+    get_user_by_id
+)
 
 app = Flask(__name__)
 
 # Automatically initialize SQLite database on startup
 init_db()
+
+JWT_SECRET = "super-secret-key-media-optimizer-2026"
+
+def generate_token(user_id):
+    payload = {
+        'user_id': user_id,
+        'exp': datetime.datetime.utcnow() + datetime.timedelta(days=7)
+    }
+    return jwt.encode(payload, JWT_SECRET, algorithm='HS256')
+
+def verify_token(token):
+    try:
+        payload = jwt.decode(token, JWT_SECRET, algorithms=['HS256'])
+        return payload['user_id']
+    except Exception:
+        return None
 
 # Native CORS handling for Flask
 @app.after_request
@@ -14,6 +40,70 @@ def after_request(response):
     response.headers.add('Access-Control-Allow-Headers', 'Content-Type,Authorization')
     response.headers.add('Access-Control-Allow-Methods', 'GET,PUT,POST,DELETE,OPTIONS')
     return response
+
+# --- Auth System Endpoints ---
+
+@app.route('/api/auth/register', methods=['POST'])
+def register():
+    data = request.json or {}
+    username = data.get('username', '').strip()
+    email = data.get('email', '').strip()
+    password = data.get('password', '')
+    full_name = data.get('fullName', '').strip()
+
+    if not username or not email or not password:
+        return jsonify({'error': 'Username, email, and password are required'}), 400
+
+    existing = get_user_by_email_or_username(username) or get_user_by_email_or_username(email)
+    if existing:
+        return jsonify({'error': 'User with this username or email already exists'}), 400
+
+    pwd_hash = generate_password_hash(password)
+    user_id = create_user(username, email, pwd_hash, full_name, 'User')
+    user = get_user_by_id(user_id)
+    token = generate_token(user_id)
+
+    return jsonify({'user': user, 'token': token}), 201
+
+@app.route('/api/auth/login', methods=['POST'])
+def login():
+    data = request.json or {}
+    identifier = data.get('identifier', '').strip()
+    password = data.get('password', '')
+
+    if not identifier or not password:
+        return jsonify({'error': 'Username/email and password are required'}), 400
+
+    user = get_user_by_email_or_username(identifier)
+    if not user or not check_password_hash(user['password_hash'], password):
+        return jsonify({'error': 'Invalid username/email or password'}), 401
+
+    token = generate_token(user['id'])
+    user_info = {
+        'id': user['id'],
+        'username': user['username'],
+        'email': user['email'],
+        'fullName': user['full_name'],
+        'role': user['role']
+    }
+    return jsonify({'user': user_info, 'token': token})
+
+@app.route('/api/auth/me', methods=['GET'])
+def get_current_user():
+    auth_header = request.headers.get('Authorization', '')
+    if not auth_header.startswith('Bearer '):
+        return jsonify({'error': 'Unauthorized'}), 401
+    
+    token = auth_header.split(' ')[1]
+    user_id = verify_token(token)
+    if not user_id:
+        return jsonify({'error': 'Invalid or expired token'}), 401
+
+    user = get_user_by_id(user_id)
+    if not user:
+        return jsonify({'error': 'User not found'}), 404
+
+    return jsonify({'user': user})
 
 # Default baseline dataset (UK / AMAZON / PETCARE)
 BRANDS = [
