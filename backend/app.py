@@ -1,7 +1,11 @@
 import math
 from flask import Flask, request, jsonify
+from database import init_db, fetch_filters_from_db, fetch_baseline_from_db
 
 app = Flask(__name__)
+
+# Automatically initialize SQLite database on startup
+init_db()
 
 # Native CORS handling for Flask
 @app.after_request
@@ -81,13 +85,9 @@ def generate_saturation_curve(selected_budget=12000000.0):
 
 @app.route('/api/filters', methods=['GET'])
 def get_filters():
-    return jsonify({
-        "markets": MARKETS,
-        "retailers": RETAILERS,
-        "categories": CATEGORIES,
-        "brands": ["ALL"] + BRANDS,
-        "mediaLevers": MEDIA_LEVERS
-    })
+    # Fetch dynamic filter lists directly from SQLite database
+    db_filters = fetch_filters_from_db()
+    return jsonify(db_filters)
 
 @app.route('/api/baseline', methods=['GET'])
 def get_baseline():
@@ -97,16 +97,19 @@ def get_baseline():
     brand_param = request.args.get('brand', 'ALL')
     media_lever = request.args.get('mediaLever', 'ALL')
 
-    base_metrics = get_base_metrics(market, retailer, category)
+    # Fetch baseline metrics & brand shares directly from SQLite database
+    base_metrics, brand_shares = fetch_baseline_from_db(market, retailer, category)
     
     # Calculate selected brands count
+    all_brands_list = [b for b in fetch_filters_from_db()["brands"] if b != 'ALL']
     if not brand_param or brand_param == 'ALL':
-        selected_brands_count = len(BRANDS)
+        selected_brands_count = len(all_brands_list)
     else:
         selected_brands_list = [b.strip() for b in brand_param.split(',') if b.strip()]
         selected_brands_count = max(1, len(selected_brands_list))
 
-    ratio = selected_brands_count / len(BRANDS)
+    total_brands_count = max(1, len(all_brands_list))
+    ratio = selected_brands_count / total_brands_count
     
     # Scale baseline metrics dynamically
     metrics = {
@@ -117,15 +120,6 @@ def get_baseline():
         "roi": base_metrics["roi"]
     }
 
-    brand_shares = {
-        "Felix": 14.3,
-        "Gourmet": 14.3,
-        "Purina One": 14.3,
-        "Pro Plan": 14.3,
-        "Bakers": 14.3,
-        "Winalot": 14.3,
-        "Dentalife": 14.2
-    }
     curve = generate_saturation_curve(metrics["budget"])
 
     return jsonify({
