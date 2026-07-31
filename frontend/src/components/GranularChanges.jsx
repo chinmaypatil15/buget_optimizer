@@ -15,7 +15,7 @@ import {
 import MultiSelectDropdown from './MultiSelectDropdown';
 import { formatCurrencyShort, formatCurrency, getCurrencySymbol } from '../utils/currencyHelper';
 
-const BRAND_OPTIONS = ['Felix', 'Gourmet', 'Purina One', 'Pro Plan', 'Bakers', 'Winalot', 'Dentalife'];
+const ALL_BRANDS = ['Felix', 'Gourmet', 'Purina One', 'Pro Plan', 'Bakers', 'Winalot', 'Dentalife'];
 const GRANULARITY_OPTIONS = ['Aggregated', 'Detailed'];
 
 export default function GranularChanges({
@@ -24,22 +24,38 @@ export default function GranularChanges({
   detailedSpend,
   detailedSales,
   market = 'UK',
+  retailer = 'AMAZON',
   selectedHeaderBrands = 'ALL'
 }) {
-  const [selectedBrands, setSelectedBrands] = useState(BRAND_OPTIONS);
+  const [selectedBrand, setSelectedBrand] = useState('ALL');
   const [granularity, setGranularity] = useState('Aggregated');
   const [mode, setMode] = useState('Absolute'); // 'Absolute' or '%'
 
-  // Synchronize 2nd brand dropdown with 1st header brand dropdown selection
-  useEffect(() => {
-    if (selectedHeaderBrands === 'ALL' || !selectedHeaderBrands) {
-      setSelectedBrands(BRAND_OPTIONS);
-    } else if (Array.isArray(selectedHeaderBrands)) {
-      setSelectedBrands(selectedHeaderBrands);
-    } else if (typeof selectedHeaderBrands === 'string') {
-      setSelectedBrands([selectedHeaderBrands]);
+  const searchThirdTactic = retailer === 'AMAZON' ? 'Sponsored Display' : 'Sponsored Video';
+
+  // Compute dynamic brand options based on selectedHeaderBrands from top header dropdown
+  const availableBrandOptions = React.useMemo(() => {
+    if (!selectedHeaderBrands || selectedHeaderBrands === 'ALL') {
+      return ['ALL', ...ALL_BRANDS];
     }
+    if (Array.isArray(selectedHeaderBrands)) {
+      if (selectedHeaderBrands.length === 0 || selectedHeaderBrands.length === ALL_BRANDS.length) {
+        return ['ALL', ...ALL_BRANDS];
+      }
+      return ['ALL', ...selectedHeaderBrands];
+    }
+    if (typeof selectedHeaderBrands === 'string') {
+      return ['ALL', selectedHeaderBrands];
+    }
+    return ['ALL', ...ALL_BRANDS];
   }, [selectedHeaderBrands]);
+
+  // Keep selectedBrand valid when available options change
+  useEffect(() => {
+    if (selectedBrand !== 'ALL' && !availableBrandOptions.includes(selectedBrand)) {
+      setSelectedBrand('ALL');
+    }
+  }, [availableBrandOptions, selectedBrand]);
 
   const defaultAggregatedSpend = granularSpend && granularSpend.length > 0 ? granularSpend : [
     { tactic: 'Total Search', value: 320000, pctValue: 8 },
@@ -54,7 +70,7 @@ export default function GranularChanges({
   const defaultDetailedSpend = detailedSpend && detailedSpend.length > 0 ? detailedSpend : [
     { tactic: 'Sponsored Product', value: 250000, pctValue: 12.5 },
     { tactic: 'Sponsored Brand', value: 80000, pctValue: 4.0 },
-    { tactic: 'Sponsored Video', value: -30000, pctValue: -1.5 },
+    { tactic: searchThirdTactic, value: -30000, pctValue: -1.5 },
     { tactic: 'Onsite Display', value: 90000, pctValue: 4.5 },
     { tactic: 'Offsite Display', value: -200000, pctValue: -10.0 }
   ];
@@ -62,7 +78,7 @@ export default function GranularChanges({
   const defaultDetailedSales = detailedSales && detailedSales.length > 0 ? detailedSales : [
     { tactic: 'Sponsored Product', value: 600000, pctValue: 25.0 },
     { tactic: 'Sponsored Brand', value: 192000, pctValue: 8.0 },
-    { tactic: 'Sponsored Video', value: -72000, pctValue: -3.0 },
+    { tactic: searchThirdTactic, value: -72000, pctValue: -3.0 },
     { tactic: 'Onsite Display', value: 216000, pctValue: 9.0 },
     { tactic: 'Offsite Display', value: -480000, pctValue: -20.0 }
   ];
@@ -70,24 +86,24 @@ export default function GranularChanges({
   const currentSpend = granularity === 'Detailed' ? defaultDetailedSpend : defaultAggregatedSpend;
   const currentSales = granularity === 'Detailed' ? defaultDetailedSales : defaultAggregatedSales;
 
-  // Smart filter for spend and sales data based on selected brands
+  // Smart filter for spend and sales data based on selected brand
   const filterBySelectedBrands = (items) => {
     if (!items || items.length === 0) return [];
-    if (!selectedBrands || selectedBrands.length === 0) return items;
+    if (!selectedBrand || selectedBrand === 'ALL') return items;
 
     // Check if any item in the array actually matches a known brand name
     const hasBrandSpecificItems = items.some(item => {
       const name = String(item.tactic || item.brand || '');
-      return BRAND_OPTIONS.some(b => name.toLowerCase().includes(b.toLowerCase()));
+      return ALL_BRANDS.some(b => name.toLowerCase().includes(b.toLowerCase()));
     });
 
-    // If items are brand-specific (e.g. Felix, Gourmet...), filter them by selectedBrands
+    // If items are brand-specific (e.g. Felix, Gourmet...), filter them by selectedBrand
     if (hasBrandSpecificItems) {
       return items.filter(item => {
         const name = String(item.tactic || item.brand || '');
-        const matchesKnownBrand = BRAND_OPTIONS.some(b => name.toLowerCase().includes(b.toLowerCase()));
+        const matchesKnownBrand = ALL_BRANDS.some(b => name.toLowerCase().includes(b.toLowerCase()));
         if (!matchesKnownBrand) return true; // Keep general channel items if present
-        return selectedBrands.some(b => name.toLowerCase().includes(b.toLowerCase()));
+        return name.toLowerCase().includes(selectedBrand.toLowerCase());
       });
     }
 
@@ -123,7 +139,7 @@ export default function GranularChanges({
   const chartSpendData = transformDataForChart(filteredSpend, false);
   const chartSalesData = transformDataForChart(filteredSales, true);
 
-  // Helper to calculate SYMMETRIC dynamic ticks with £0K in EXACT CENTER (50%) and no label overlap
+  // Helper to calculate SYMMETRIC dynamic ticks for Absolute mode
   const calculateSymmetricDynamicTicks = (items, defaultMax = 450000) => {
     let maxAbs = 0;
     if (items && items.length > 0) {
@@ -135,7 +151,6 @@ export default function GranularChanges({
 
     if (maxAbs === 0) maxAbs = defaultMax;
 
-    // Pick a clean step size (150K, 300K, 500K, 1M...)
     let step = 150000;
     if (maxAbs <= 150000) step = 50000;
     else if (maxAbs <= 350000) step = 150000;
@@ -148,8 +163,45 @@ export default function GranularChanges({
       step = Math.ceil(rough / mag) * mag;
     }
 
-    // Number of steps on each side (symmetric around 0!)
     const stepCount = Math.max(2, Math.ceil((maxAbs * 1.35) / step));
+    const limit = stepCount * step;
+
+    const ticks = [];
+    for (let t = -limit; t <= limit + 0.1; t += step) {
+      ticks.push(Math.round(t));
+    }
+
+    return {
+      ticks,
+      domain: [-limit, limit]
+    };
+  };
+
+  // Helper to calculate SYMMETRIC dynamic percentage ticks with 0% in EXACT CENTER (50%) and dynamic end ticks
+  const calculateSymmetricPctTicks = (chartData, defaultMaxPct = 15) => {
+    let maxAbsPct = 0;
+    if (chartData && chartData.length > 0) {
+      chartData.forEach((item) => {
+        const v = Math.abs(item.value || 0);
+        if (v > maxAbsPct) maxAbsPct = v;
+      });
+    }
+
+    if (maxAbsPct === 0) maxAbsPct = defaultMaxPct;
+
+    // Pick a clean step size for percentage (5%, 10%, 15%, 25%, 50%...)
+    let step = 5;
+    if (maxAbsPct <= 10) step = 5;
+    else if (maxAbsPct <= 20) step = 10;
+    else if (maxAbsPct <= 40) step = 15;
+    else if (maxAbsPct <= 60) step = 25;
+    else if (maxAbsPct <= 100) step = 50;
+    else {
+      step = Math.ceil(maxAbsPct / 2 / 10) * 10;
+    }
+
+    // Number of steps on each side (symmetric around 0!)
+    const stepCount = Math.max(2, Math.ceil((maxAbsPct * 1.3) / step));
     const limit = stepCount * step;
 
     const ticks = [];
@@ -166,6 +218,9 @@ export default function GranularChanges({
   const spendInfo = calculateSymmetricDynamicTicks(filteredSpend, 450000);
   const salesInfo = calculateSymmetricDynamicTicks(filteredSales, 900000);
 
+  const spendPctInfo = calculateSymmetricPctTicks(chartSpendData, 15);
+  const salesPctInfo = calculateSymmetricPctTicks(chartSalesData, 15);
+
   const formatAxisTick = (v) => {
     if (mode === '%') return `${v}%`;
     const symbol = getCurrencySymbol(market);
@@ -174,11 +229,11 @@ export default function GranularChanges({
   };
 
   const xAxisSpendProps = mode === '%'
-    ? { ticks: [-100, -50, 0, 50, 100], domain: [-100, 100] }
+    ? { ticks: spendPctInfo.ticks, domain: spendPctInfo.domain }
     : { ticks: spendInfo.ticks, domain: spendInfo.domain };
 
   const xAxisSalesProps = mode === '%'
-    ? { ticks: [-100, -50, 0, 50, 100], domain: [-100, 100] }
+    ? { ticks: salesPctInfo.ticks, domain: salesPctInfo.domain }
     : { ticks: salesInfo.ticks, domain: salesInfo.domain };
 
   // Custom label renderer for horizontal diverging bar charts matching Image
@@ -217,18 +272,18 @@ export default function GranularChanges({
 
       <Box sx={{ display: 'flex', flexWrap: 'wrap', alignItems: 'flex-end', gap: 2, mb: 3 }}>
         
-        {/* BRAND MULTI-SELECT DROPDOWN */}
+        {/* BRAND SINGLE-SELECT DROPDOWN MATCHING IMAGE 1 */}
         <Box sx={{ width: 180, position: 'relative', zIndex: 40 }}>
           <Typography variant="caption" sx={{ fontWeight: 700, color: 'text.secondary', letterSpacing: '0.05em', display: 'block', mb: 0.5 }}>
             BRAND
           </Typography>
           <MultiSelectDropdown
             compact={true}
-            options={BRAND_OPTIONS}
-            selected={selectedBrands}
-            showSelectAll={true}
-            showCheckboxes={true}
-            onChange={(newSelected) => setSelectedBrands(newSelected)}
+            options={availableBrandOptions}
+            selected={[selectedBrand]}
+            showSelectAll={false}
+            showCheckboxes={false}
+            onChange={(newSelected) => setSelectedBrand(newSelected[0] || 'ALL')}
           />
         </Box>
 

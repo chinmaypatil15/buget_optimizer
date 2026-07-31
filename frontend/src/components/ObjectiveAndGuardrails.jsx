@@ -17,9 +17,12 @@ import { getCurrencySymbol, formatCurrency } from '../utils/currencyHelper';
 
 const SALES_KPI_OPTIONS = ['TOTAL SALES', 'NNS'];
 
-export default function ObjectiveAndGuardrails({ onOptimize, market = 'UK' }) {
+export default function ObjectiveAndGuardrails({ onOptimize, market = 'UK', retailer = 'AMAZON', mediaLever = 'ALL' }) {
   const [objective, setObjective] = useState('Maximize Sales');
   const [useGuardrails, setUseGuardrails] = useState(false);
+
+  const isSearchDisabled = String(mediaLever).toUpperCase() === 'DISPLAY';
+  const isDisplayDisabled = String(mediaLever).toUpperCase() === 'SEARCH';
 
   const currencySymbol = getCurrencySymbol(market);
 
@@ -193,16 +196,40 @@ export default function ObjectiveAndGuardrails({ onOptimize, market = 'UK' }) {
           }}
         >
           {/* Column 1: Use Last Year Budget */}
-          <Box sx={{ width: '100%' }}>
-            <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', minHeight: 24, mb: 0.75 }}>
-              <Typography variant="caption" sx={{ fontWeight: 600, color: 'text.secondary' }}>
+          <Box sx={{ width: '100%', opacity: targetMode === 'lastYear' ? 1 : 0.75, transition: 'opacity 0.2s ease' }}>
+            <Box
+              onClick={() => {
+                setTargetMode('lastYear');
+                setNewBudgetVal('');
+                setSalesTargetVal('');
+              }}
+              sx={{ display: 'flex', alignItems: 'center', minHeight: 24, mb: 0.75, cursor: 'pointer' }}
+            >
+              <Radio
+                size="small"
+                checked={targetMode === 'lastYear'}
+                onChange={() => {
+                  setTargetMode('lastYear');
+                  setNewBudgetVal('');
+                  setSalesTargetVal('');
+                }}
+                sx={{ p: 0, mr: 0.75, color: '#94a3b8', '&.Mui-checked': { color: '#2563eb' } }}
+              />
+              <Typography
+                variant="caption"
+                sx={{
+                  fontWeight: 700,
+                  color: targetMode === 'lastYear' ? 'text.primary' : 'text.secondary',
+                  cursor: 'pointer'
+                }}
+              >
                 Use Last Year Budget ({currencySymbol})
               </Typography>
             </Box>
             <TextField
               fullWidth
               size="small"
-              readOnly
+              disabled={targetMode !== 'lastYear'}
               value={formatCurrency(lastYearBudgetNum, market)}
               onClick={() => {
                 setTargetMode('lastYear');
@@ -212,13 +239,13 @@ export default function ObjectiveAndGuardrails({ onOptimize, market = 'UK' }) {
               sx={{
                 '& .MuiOutlinedInput-root': {
                   borderRadius: '6px',
-                  bgcolor: '#ffffff',
+                  bgcolor: targetMode === 'lastYear' ? '#ffffff' : '#f8fafc',
                   '& fieldset': {
                     borderColor: targetMode === 'lastYear' ? '#2563eb' : '#e2e8f0',
                     borderWidth: targetMode === 'lastYear' ? 2 : 1
                   }
                 },
-                '& input': { fontWeight: 600, color: '#334155', cursor: 'pointer' }
+                '& input': { fontWeight: 600, color: targetMode === 'lastYear' ? '#334155' : '#94a3b8', cursor: targetMode === 'lastYear' ? 'pointer' : 'not-allowed' }
               }}
             />
             <Typography variant="caption" sx={{ color: 'text.secondary', display: 'block', mt: 0.75, fontSize: '0.6875rem', minHeight: 18 }}>
@@ -232,9 +259,31 @@ export default function ObjectiveAndGuardrails({ onOptimize, market = 'UK' }) {
           </Typography>
 
           {/* Column 2: Input New Budget */}
-          <Box sx={{ width: '100%' }}>
-            <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', minHeight: 24, mb: 0.75 }}>
-              <Typography variant="caption" sx={{ fontWeight: 600, color: 'text.secondary' }}>
+          <Box sx={{ width: '100%', opacity: targetMode === 'newBudget' ? 1 : 0.75, transition: 'opacity 0.2s ease' }}>
+            <Box
+              onClick={() => {
+                setTargetMode('newBudget');
+                setSalesTargetVal('');
+              }}
+              sx={{ display: 'flex', alignItems: 'center', minHeight: 24, mb: 0.75, cursor: 'pointer' }}
+            >
+              <Radio
+                size="small"
+                checked={targetMode === 'newBudget'}
+                onChange={() => {
+                  setTargetMode('newBudget');
+                  setSalesTargetVal('');
+                }}
+                sx={{ p: 0, mr: 0.75, color: '#94a3b8', '&.Mui-checked': { color: '#2563eb' } }}
+              />
+              <Typography
+                variant="caption"
+                sx={{
+                  fontWeight: 700,
+                  color: targetMode === 'newBudget' ? 'text.primary' : 'text.secondary',
+                  cursor: 'pointer'
+                }}
+              >
                 Input New Budget ({currencySymbol})
               </Typography>
             </Box>
@@ -242,6 +291,7 @@ export default function ObjectiveAndGuardrails({ onOptimize, market = 'UK' }) {
               fullWidth
               size="small"
               type="number"
+              disabled={targetMode !== 'newBudget'}
               placeholder="Enter amount"
               value={newBudgetVal}
               onChange={(e) => {
@@ -256,7 +306,7 @@ export default function ObjectiveAndGuardrails({ onOptimize, market = 'UK' }) {
               sx={{
                 '& .MuiOutlinedInput-root': {
                   borderRadius: '6px',
-                  bgcolor: '#ffffff',
+                  bgcolor: targetMode === 'newBudget' ? '#ffffff' : '#f8fafc',
                   '& fieldset': {
                     borderColor: targetMode === 'newBudget' ? '#2563eb' : '#e2e8f0',
                     borderWidth: targetMode === 'newBudget' ? 2 : 1
@@ -273,16 +323,41 @@ export default function ObjectiveAndGuardrails({ onOptimize, market = 'UK' }) {
           </Typography>
 
           {/* Column 3: Input Sales Target */}
-          <Box sx={{ width: '100%' }}>
+          <Box sx={{ width: '100%', opacity: targetMode === 'salesTarget' ? 1 : 0.75, transition: 'opacity 0.2s ease' }}>
             <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', minHeight: 24, mb: 0.75 }}>
-              <Typography variant="caption" sx={{ fontWeight: 600, color: 'text.secondary' }}>
-                {targetSubMode === 'pct' ? 'Input Sales Target (% Increase)' : `Input Sales Target (${currencySymbol})`}
-              </Typography>
+              <Box
+                onClick={() => {
+                  setTargetMode('salesTarget');
+                  setNewBudgetVal('');
+                }}
+                sx={{ display: 'flex', alignItems: 'center', cursor: 'pointer' }}
+              >
+                <Radio
+                  size="small"
+                  checked={targetMode === 'salesTarget'}
+                  onChange={() => {
+                    setTargetMode('salesTarget');
+                    setNewBudgetVal('');
+                  }}
+                  sx={{ p: 0, mr: 0.75, color: '#94a3b8', '&.Mui-checked': { color: '#2563eb' } }}
+                />
+                <Typography
+                  variant="caption"
+                  sx={{
+                    fontWeight: 700,
+                    color: targetMode === 'salesTarget' ? 'text.primary' : 'text.secondary',
+                    cursor: 'pointer'
+                  }}
+                >
+                  {targetSubMode === 'pct' ? 'Input Sales Target (% Increase)' : `Input Sales Target (${currencySymbol})`}
+                </Typography>
+              </Box>
 
-              {/* Target / % Toggle Pill matching image */}
+              {/* Target / % Toggle Pill */}
               <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
                 <Button
                   size="small"
+                  disabled={targetMode !== 'salesTarget'}
                   onClick={() => setTargetSubMode('target')}
                   sx={{
                     minWidth: 0,
@@ -303,6 +378,7 @@ export default function ObjectiveAndGuardrails({ onOptimize, market = 'UK' }) {
                 </Button>
                 <Button
                   size="small"
+                  disabled={targetMode !== 'salesTarget'}
                   onClick={() => setTargetSubMode('pct')}
                   sx={{
                     minWidth: 0,
@@ -328,6 +404,7 @@ export default function ObjectiveAndGuardrails({ onOptimize, market = 'UK' }) {
               fullWidth
               size="small"
               type="number"
+              disabled={targetMode !== 'salesTarget'}
               placeholder={targetSubMode === 'target' ? `Sales target in ${currencySymbol}` : '% increase'}
               value={salesTargetVal}
               onChange={(e) => {
@@ -342,7 +419,7 @@ export default function ObjectiveAndGuardrails({ onOptimize, market = 'UK' }) {
               sx={{
                 '& .MuiOutlinedInput-root': {
                   borderRadius: '6px',
-                  bgcolor: '#ffffff',
+                  bgcolor: targetMode === 'salesTarget' ? '#ffffff' : '#f8fafc',
                   '& fieldset': {
                     borderColor: targetMode === 'salesTarget' ? '#2563eb' : '#e2e8f0',
                     borderWidth: targetMode === 'salesTarget' ? 2 : 1
@@ -351,7 +428,7 @@ export default function ObjectiveAndGuardrails({ onOptimize, market = 'UK' }) {
               }}
             />
             {targetSubMode === 'pct' ? (
-              <Typography variant="caption" sx={{ color: '#2563eb', fontWeight: 600, display: 'block', mt: 0.75, fontSize: '0.6875rem', minHeight: 18 }}>
+              <Typography variant="caption" sx={{ color: targetMode === 'salesTarget' ? '#2563eb' : '#94a3b8', fontWeight: 600, display: 'block', mt: 0.75, fontSize: '0.6875rem', minHeight: 18 }}>
                 Calculated Target: {formatCurrency((25200000 * marketMult) * (1 + (parseFloat(salesTargetVal) || 0) / 100), market)}
               </Typography>
             ) : (
@@ -542,8 +619,30 @@ export default function ObjectiveAndGuardrails({ onOptimize, market = 'UK' }) {
                 }}
               >
                 {/* Search Budget Guardrails */}
-                <Box sx={{ width: '100%' }}>
-                  <Typography variant="caption" sx={{ fontWeight: 800, color: 'text.primary', letterSpacing: '0.05em', display: 'block' }}>
+                <Box
+                  sx={{
+                    width: '100%',
+                    position: 'relative',
+                    opacity: isSearchDisabled ? 0.75 : 1,
+                    transition: 'all 0.2s ease'
+                  }}
+                >
+                  {isSearchDisabled && (
+                    <Box
+                      sx={{
+                        position: 'absolute',
+                        top: 0,
+                        left: 0,
+                        right: 0,
+                        bottom: 0,
+                        zIndex: 10,
+                        cursor: 'not-allowed',
+                        pointerEvents: 'all'
+                      }}
+                      title="Search Budget Guardrails disabled for selected Media Lever"
+                    />
+                  )}
+                  <Typography variant="caption" sx={{ fontWeight: 800, color: isSearchDisabled ? 'text.secondary' : 'text.primary', letterSpacing: '0.05em', display: 'block' }}>
                     SEARCH BUDGET GUARDRAILS
                   </Typography>
                   <Typography variant="caption" sx={{ color: 'text.secondary', fontStyle: 'italic', display: 'block', mb: 1 }}>
@@ -557,6 +656,7 @@ export default function ObjectiveAndGuardrails({ onOptimize, market = 'UK' }) {
                       max={100}
                       value={searchSponsoredProduct}
                       onChange={setSearchSponsoredProduct}
+                      disabled={isSearchDisabled}
                     />
                     <DualRangeSlider
                       label="Sponsored Brand Share"
@@ -564,20 +664,44 @@ export default function ObjectiveAndGuardrails({ onOptimize, market = 'UK' }) {
                       max={100}
                       value={searchSponsoredBrand}
                       onChange={setSearchSponsoredBrand}
+                      disabled={isSearchDisabled}
                     />
                     <DualRangeSlider
-                      label="Sponsored Video Share"
+                      label={retailer === 'AMAZON' ? "Sponsored Display Share" : "Sponsored Video Share"}
                       min={0}
                       max={100}
                       value={searchSponsoredVideo}
                       onChange={setSearchSponsoredVideo}
+                      disabled={isSearchDisabled}
                     />
                   </Box>
                 </Box>
 
                 {/* Display Budget Guardrails */}
-                <Box sx={{ width: '100%' }}>
-                  <Typography variant="caption" sx={{ fontWeight: 800, color: 'text.primary', letterSpacing: '0.05em', display: 'block' }}>
+                <Box
+                  sx={{
+                    width: '100%',
+                    position: 'relative',
+                    opacity: isDisplayDisabled ? 0.75 : 1,
+                    transition: 'all 0.2s ease'
+                  }}
+                >
+                  {isDisplayDisabled && (
+                    <Box
+                      sx={{
+                        position: 'absolute',
+                        top: 0,
+                        left: 0,
+                        right: 0,
+                        bottom: 0,
+                        zIndex: 10,
+                        cursor: 'not-allowed',
+                        pointerEvents: 'all'
+                      }}
+                      title="Display Budget Guardrails disabled for selected Media Lever"
+                    />
+                  )}
+                  <Typography variant="caption" sx={{ fontWeight: 800, color: isDisplayDisabled ? 'text.secondary' : 'text.primary', letterSpacing: '0.05em', display: 'block' }}>
                     DISPLAY BUDGET GUARDRAILS
                   </Typography>
                   <Typography variant="caption" sx={{ color: 'text.secondary', fontStyle: 'italic', display: 'block', mb: 1 }}>
@@ -591,6 +715,7 @@ export default function ObjectiveAndGuardrails({ onOptimize, market = 'UK' }) {
                       max={100}
                       value={displayOnsite}
                       onChange={setDisplayOnsite}
+                      disabled={isDisplayDisabled}
                     />
                     <DualRangeSlider
                       label="Offsite Budget Share"
@@ -598,6 +723,7 @@ export default function ObjectiveAndGuardrails({ onOptimize, market = 'UK' }) {
                       max={100}
                       value={displayOffsite}
                       onChange={setDisplayOffsite}
+                      disabled={isDisplayDisabled}
                     />
                   </Box>
                 </Box>

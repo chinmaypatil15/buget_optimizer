@@ -11,7 +11,7 @@ import {
 } from '@mui/material';
 import { formatCurrency } from '../utils/currencyHelper';
 
-export default function DeepDiveTable({ deepDiveData, market = 'UK' }) {
+export default function DeepDiveTable({ deepDiveData, market = 'UK', retailer = 'AMAZON' }) {
   const [searchExpanded, setSearchExpanded] = useState(false);
   const [displayExpanded, setDisplayExpanded] = useState(false);
 
@@ -140,7 +140,7 @@ export default function DeepDiveTable({ deepDiveData, market = 'UK' }) {
                       whiteSpace: 'nowrap'
                     }}
                   >
-                    Sponsored Video
+                    {retailer === 'AMAZON' ? 'Sponsored Display' : 'Sponsored Video'}
                   </TableCell>
                 </>
               )}

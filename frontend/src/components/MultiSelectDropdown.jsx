@@ -9,6 +9,7 @@ import {
   Box
 } from '@mui/material';
 import KeyboardArrowDownIcon from '@mui/icons-material/KeyboardArrowDown';
+import CheckIcon from '@mui/icons-material/Check';
 
 export default function MultiSelectDropdown({
   options = [],
@@ -44,8 +45,9 @@ export default function MultiSelectDropdown({
   };
 
   const renderDisplayText = () => {
-    if (!selected || selected.length === 0) return 'Select';
+    if (!selected || (Array.isArray(selected) && selected.length === 0)) return 'Select';
     if (showCheckboxes && isAllSelected) return 'ALL';
+    if (!showCheckboxes) return Array.isArray(selected) ? (selected[0] || 'Select') : selected;
     if (selected.length === 1) return selected[0];
     return `${selected.length} Selected`;
   };
@@ -54,7 +56,7 @@ export default function MultiSelectDropdown({
     <FormControl fullWidth size="small">
       <Select
         multiple={showCheckboxes}
-        value={showCheckboxes ? selected : (selected[0] || '')}
+        value={showCheckboxes ? selected : (Array.isArray(selected) ? (selected[0] || '') : selected)}
         displayEmpty
         renderValue={() => (
           <Typography
@@ -129,17 +131,24 @@ export default function MultiSelectDropdown({
 
         {/* Option Items */}
         {options.map((option) => {
-          const isChecked = selected.includes(option);
+          const isChecked = showCheckboxes
+            ? selected.includes(option)
+            : (Array.isArray(selected) ? selected[0] === option : selected === option);
           return (
             <MenuItem
               key={option}
               value={option}
               onClick={() => handleOptionToggle(option)}
               sx={{
-                py: 0.5,
+                py: 0.75,
                 px: 1.5,
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                backgroundColor: !showCheckboxes && isChecked ? '#f1f5f9' : 'transparent',
                 '&:hover': { backgroundColor: '#f8fafc' },
-                '&.Mui-selected': { backgroundColor: '#f1f5f9' }
+                '&.Mui-selected': { backgroundColor: '#f1f5f9' },
+                '&.Mui-selected:hover': { backgroundColor: '#f1f5f9' }
               }}
             >
               {showCheckboxes && (
@@ -157,6 +166,9 @@ export default function MultiSelectDropdown({
                   color: isChecked ? '#0f172a' : '#475569'
                 }}
               />
+              {!showCheckboxes && isChecked && (
+                <CheckIcon sx={{ fontSize: 16, color: '#0f172a', ml: 1 }} />
+              )}
             </MenuItem>
           );
         })}

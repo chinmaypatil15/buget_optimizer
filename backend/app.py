@@ -137,6 +137,8 @@ def get_baseline():
 @app.route('/api/optimize', methods=['POST'])
 def optimize():
     data = request.json or {}
+    retailer = data.get('retailer', 'AMAZON')
+    search_third_tactic = "Sponsored Display" if retailer == "AMAZON" else "Sponsored Video"
     target_val = float(data.get('targetValue', 15000000))
     target_mode = data.get('targetMode', 'budget') # 'budget' or 'target'
     objective = data.get('objective', 'Maximize Sales')
@@ -327,7 +329,7 @@ def optimize():
     detailed_spend = [
         {"tactic": "Sponsored Product", "value": round(250000.0 * scale, 2), "pctValue": 12.5},
         {"tactic": "Sponsored Brand", "value": round(80000.0 * scale, 2), "pctValue": 4.0},
-        {"tactic": "Sponsored Video", "value": round(-30000.0 * scale, 2), "pctValue": -1.5},
+        {"tactic": search_third_tactic, "value": round(-30000.0 * scale, 2), "pctValue": -1.5},
         {"tactic": "Onsite Display", "value": round(90000.0 * scale, 2), "pctValue": 4.5},
         {"tactic": "Offsite Display", "value": round(-200000.0 * scale, 2), "pctValue": -10.0}
     ]
@@ -335,7 +337,7 @@ def optimize():
     detailed_sales = [
         {"tactic": "Sponsored Product", "value": round(600000.0 * scale, 2), "pctValue": 25.0},
         {"tactic": "Sponsored Brand", "value": round(192000.0 * scale, 2), "pctValue": 8.0},
-        {"tactic": "Sponsored Video", "value": round(-72000.0 * scale, 2), "pctValue": -3.0},
+        {"tactic": search_third_tactic, "value": round(-72000.0 * scale, 2), "pctValue": -3.0},
         {"tactic": "Onsite Display", "value": round(216000.0 * scale, 2), "pctValue": 9.0},
         {"tactic": "Offsite Display", "value": round(-480000.0 * scale, 2), "pctValue": -20.0}
     ]

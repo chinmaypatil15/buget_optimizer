@@ -106,7 +106,7 @@ export default function App() {
         <LastYearDetails baselineData={baselineData} market={filters.market} />
 
         {/* Objective & Input Guardrails */}
-        <ObjectiveAndGuardrails onOptimize={runOptimization} market={filters.market} />
+        <ObjectiveAndGuardrails onOptimize={runOptimization} market={filters.market} retailer={filters.retailer} mediaLever={filters.mediaLever} />
 
         {/* Optimization Outputs & Charts - ONLY DISPLAY AFTER CLICKING OPTIMIZE BUDGET */}
         {hasOptimized && resultsData && (
@@ -126,11 +126,12 @@ export default function App() {
               detailedSpend={resultsData?.detailedSpend}
               detailedSales={resultsData?.detailedSales}
               market={filters.market}
+              retailer={filters.retailer}
               selectedHeaderBrands={filters.brand}
             />
 
             {/* Deep Dive Breakdown Table */}
-            <DeepDiveTable deepDiveData={resultsData?.deepDive} market={filters.market} />
+            <DeepDiveTable deepDiveData={resultsData?.deepDive} market={filters.market} retailer={filters.retailer} />
           </>
         )}
 

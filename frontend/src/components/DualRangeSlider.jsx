@@ -9,7 +9,8 @@ export default function DualRangeSlider({
   value = [20, 80],
   onChange,
   isCurrency = false,
-  market = 'UK'
+  market = 'UK',
+  disabled = false
 }) {
   const [minVal, maxVal] = value;
   const minDistance = isCurrency ? Math.round((max - min) * 0.02) || 100000 : 2;
@@ -23,7 +24,7 @@ export default function DualRangeSlider({
   };
 
   const handleSliderChange = (event, newValue, activeThumb) => {
-    if (!Array.isArray(newValue)) return;
+    if (disabled || !Array.isArray(newValue)) return;
 
     let [newMin, newMax] = newValue;
     if (newMax - newMin < minDistance) {
@@ -39,7 +40,7 @@ export default function DualRangeSlider({
   };
 
   return (
-    <Box sx={{ display: 'flex', alignItems: 'flex-start', gap: 2, py: 0.1, width: '100%' }}>
+    <Box sx={{ display: 'flex', alignItems: 'flex-start', gap: 2, py: 0.1, width: '100%', opacity: disabled ? 0.75 : 1 }}>
       {/* Column 1: Label Name */}
       <Box sx={{ width: 170, flexShrink: 0, pt: 0.1 }}>
         <Typography
@@ -47,7 +48,7 @@ export default function DualRangeSlider({
           sx={{
             fontSize: '0.75rem',
             fontWeight: 700,
-            color: 'text.primary',
+            color: disabled ? 'text.secondary' : 'text.primary',
             letterSpacing: '0.02em',
             display: 'block',
             whiteSpace: 'nowrap',
@@ -67,30 +68,38 @@ export default function DualRangeSlider({
           min={min}
           max={max}
           step={stepVal}
+          disabled={disabled}
           disableSwap={false}
           sx={{
-            color: '#0b1329',
+            color: disabled ? '#94a3b8' : '#0b1329',
             height: 4,
             padding: '6px 0 2px 0',
             width: '100%',
+            '&.Mui-disabled': {
+              color: '#94a3b8'
+            },
             '& .MuiSlider-track': {
               border: 'none',
-              backgroundColor: '#0b1329',
+              backgroundColor: disabled ? '#94a3b8' : '#0b1329',
               height: 4
             },
             '& .MuiSlider-rail': {
               opacity: 1,
-              backgroundColor: '#cbd5e1',
+              backgroundColor: disabled ? '#e2e8f0' : '#cbd5e1',
               height: 4
             },
             '& .MuiSlider-thumb': {
               height: 14,
               width: 14,
               backgroundColor: '#ffffff',
-              border: '1.5px solid #0b1329',
+              border: disabled ? '1.5px solid #94a3b8' : '1.5px solid #0b1329',
               boxShadow: '0 1px 3px rgba(0, 0, 0, 0.15)',
+              '&.Mui-disabled': {
+                backgroundColor: '#f1f5f9',
+                border: '1.5px solid #cbd5e1'
+              },
               '&:focus, &:hover, &.Mui-active, &.Mui-focusVisible': {
-                boxShadow: '0 0 0 6px rgba(11, 19, 41, 0.16)'
+                boxShadow: disabled ? 'none' : '0 0 0 6px rgba(11, 19, 41, 0.16)'
               }
             }
           }}
