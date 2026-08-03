@@ -9,7 +9,9 @@ from database import (
     fetch_baseline_from_db,
     create_user,
     get_user_by_email_or_username,
-    get_user_by_id
+    get_user_by_id,
+    save_optimization_session,
+    get_optimization_sessions
 )
 
 app = Flask(__name__)
@@ -426,6 +428,43 @@ def optimize():
         {"tactic": "Offsite Display", "value": round(-480000.0 * scale, 2), "pctValue": -20.0}
     ]
 
+    # Automatic Session Saving to SQLite Database
+    try:
+        auth_header = request.headers.get('Authorization', '')
+        user_id = None
+        if auth_header.startswith('Bearer '):
+            token = auth_header.split(' ')[1]
+            user_id = verify_token(token)
+
+        save_optimization_session({
+            'userId': user_id,
+            'market': data.get('market', 'UK'),
+            'retailer': retailer,
+            'category': data.get('category', 'PETCARE'),
+            'brand': data.get('brand', 'ALL'),
+            'mediaLever': data.get('mediaLever', 'ALL'),
+            'objective': objective,
+            'salesKpi': data.get('salesKpi', 'TOTAL SALES'),
+            'targetMode': target_mode,
+            'inputBudget': target_val if target_mode == 'budget' else None,
+            'inputSalesTarget': target_val if target_mode != 'budget' else None,
+            'targetSubMode': data.get('targetSubMode', 'target'),
+            'useGuardrails': data.get('useGuardrails', False),
+            'guardrailsData': data.get('guardrailsData', {}),
+            'optBudget': optimized_metrics['budget'],
+            'optBudgetPctChange': optimized_metrics['budgetChangePct'],
+            'optVolume': optimized_metrics['volume'],
+            'optVolumePctChange': optimized_metrics['volumeChangePct'],
+            'optSales': optimized_metrics['sales'],
+            'optSalesPctChange': optimized_metrics['salesChangePct'],
+            'optNns': optimized_metrics['nns'],
+            'optNnsPctChange': optimized_metrics['nnsChangePct'],
+            'optRoi': optimized_metrics['roi'],
+            'optRoiPctChange': optimized_metrics['roiChangePct']
+        })
+    except Exception as e:
+        print(f"Error saving optimization session to DB: {e}")
+
     return jsonify({
         "metrics": optimized_metrics,
         "waterfall": waterfall,
@@ -437,6 +476,17 @@ def optimize():
         "detailedSales": detailed_sales,
         "deepDive": deep_dive
     })
+
+@app.route('/api/sessions', methods=['GET'])
+def get_sessions():
+    auth_header = request.headers.get('Authorization', '')
+    user_id = None
+    if auth_header.startswith('Bearer '):
+        token = auth_header.split(' ')[1]
+        user_id = verify_token(token)
+
+    sessions = get_optimization_sessions(user_id=user_id, limit=30)
+    return jsonify({'sessions': sessions})
 
 if __name__ == '__main__':
     app.run(port=5000, debug=True)

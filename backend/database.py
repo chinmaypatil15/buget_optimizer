@@ -71,6 +71,46 @@ def init_db():
         )
     ''')
 
+    # 6. Create optimization_sessions table for saving run inputs & outputs
+    cursor.execute('''
+        CREATE TABLE IF NOT EXISTS optimization_sessions (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            user_id INTEGER,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            
+            -- Filter Inputs
+            market TEXT,
+            retailer TEXT,
+            category TEXT,
+            brand TEXT,
+            media_lever TEXT,
+            
+            -- Objective & Target Inputs
+            objective TEXT,
+            sales_kpi TEXT,
+            target_mode TEXT,
+            input_budget REAL,
+            input_sales_target REAL,
+            target_sub_mode TEXT,
+            
+            -- Guardrails (Min & Max bounds)
+            use_guardrails INTEGER,
+            guardrails_data TEXT,
+            
+            -- Optimized Output Results
+            opt_budget REAL,
+            opt_budget_pct_change REAL,
+            opt_volume INTEGER,
+            opt_volume_pct_change REAL,
+            opt_sales REAL,
+            opt_sales_pct_change REAL,
+            opt_nns REAL,
+            opt_nns_pct_change REAL,
+            opt_roi REAL,
+            opt_roi_pct_change REAL
+        )
+    ''')
+
     # Seed data if empty
     cursor.execute("SELECT COUNT(*) FROM filters")
     if cursor.fetchone()[0] == 0:
@@ -201,6 +241,85 @@ def get_user_by_id(user_id):
     row = cursor.fetchone()
     conn.close()
     return dict(row) if row else None
+
+import json
+
+def save_optimization_session(session_data):
+    conn = get_db_connection()
+    cursor = conn.cursor()
+
+    guardrails_json = json.dumps(session_data.get('guardrailsData', {}))
+
+    cursor.execute('''
+        INSERT INTO optimization_sessions (
+            user_id, market, retailer, category, brand, media_lever,
+            objective, sales_kpi, target_mode, input_budget, input_sales_target, target_sub_mode,
+            use_guardrails, guardrails_data,
+            opt_budget, opt_budget_pct_change, opt_volume, opt_volume_pct_change,
+            opt_sales, opt_sales_pct_change, opt_nns, opt_nns_pct_change,
+            opt_roi, opt_roi_pct_change
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    ''', (
+        session_data.get('userId'),
+        session_data.get('market'),
+        session_data.get('retailer'),
+        session_data.get('category'),
+        session_data.get('brand'),
+        session_data.get('mediaLever'),
+        session_data.get('objective'),
+        session_data.get('salesKpi'),
+        session_data.get('targetMode'),
+        session_data.get('inputBudget'),
+        session_data.get('inputSalesTarget'),
+        session_data.get('targetSubMode'),
+        1 if session_data.get('useGuardrails') else 0,
+        guardrails_json,
+        session_data.get('optBudget'),
+        session_data.get('optBudgetPctChange'),
+        session_data.get('optVolume'),
+        session_data.get('optVolumePctChange'),
+        session_data.get('optSales'),
+        session_data.get('optSalesPctChange'),
+        session_data.get('optNns'),
+        session_data.get('optNnsPctChange'),
+        session_data.get('optRoi'),
+        session_data.get('optRoiPctChange')
+    ))
+
+    session_id = cursor.lastrowid
+    conn.commit()
+    conn.close()
+    return session_id
+
+def get_optimization_sessions(user_id=None, limit=20):
+    conn = get_db_connection()
+    cursor = conn.cursor()
+
+    if user_id:
+        cursor.execute(
+            "SELECT * FROM optimization_sessions WHERE user_id = ? ORDER BY created_at DESC LIMIT ?",
+            (user_id, limit)
+        )
+    else:
+        cursor.execute(
+            "SELECT * FROM optimization_sessions ORDER BY created_at DESC LIMIT ?",
+            (limit,)
+        )
+
+    rows = cursor.fetchall()
+    conn.close()
+
+    sessions = []
+    for r in rows:
+        item = dict(r)
+        if item.get('guardrails_data'):
+            try:
+                item['guardrails_data'] = json.loads(item['guardrails_data'])
+            except Exception:
+                pass
+        sessions.append(item)
+
+    return sessions
 
 if __name__ == '__main__':
     init_db()

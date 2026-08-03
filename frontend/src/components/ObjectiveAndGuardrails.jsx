@@ -93,7 +93,7 @@ export default function ObjectiveAndGuardrails({ onOptimize, market = 'UK', reta
       targetMode: finalTargetMode,
       targetValue: finalTargetVal,
       salesKPI: objective === 'Maximize ROI' ? 'ROI' : salesKPI,
-      guardrails: {
+      guardrailsData: {
         brandRanges: {
           purinaOne: purinaOneRange,
           beneful: benefulRange,
