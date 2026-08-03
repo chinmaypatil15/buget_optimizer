@@ -124,13 +124,16 @@ CATEGORIES = ["PETCARE", "BEVERAGES", "SNACKS", "BEAUTY"]
 MEDIA_LEVERS = ["ALL", "Search", "Display", "Video", "Social"]
 
 def get_base_metrics(market, retailer, category):
+    m = str(market).split(',')[0].split('-')[0].strip().upper()
     mult = 1.0
-    if market == "US":
+    if m in ["US", "USA"]:
         mult = 1.8
-    elif market == "GERMANY":
+    elif m in ["DE", "GERMANY"]:
         mult = 1.2
-    elif market == "FRANCE":
+    elif m in ["FR", "FRANCE"]:
         mult = 0.9
+    elif m in ["IT", "ITALY", "ES", "SPAIN"]:
+        mult = 0.95
 
     base_budget = 12000000.0 * mult
     base_volume = int(960000 * mult)

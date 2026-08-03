@@ -4,10 +4,13 @@
 
 export const getCurrencySymbol = (market) => {
   if (!market) return '£';
-  const m = String(market).split('-')[0].trim().toUpperCase();
+  const firstMarket = Array.isArray(market) ? market[0] : market;
+  if (!firstMarket) return '£';
+  
+  const m = String(firstMarket).split(',')[0].split('-')[0].trim().toUpperCase();
   if (m === 'US' || m === 'USA') return '$';
   if (m === 'UK' || m === 'ENGLAND' || m === 'GB') return '£';
-  if (['DE', 'FR', 'IT', 'ES', 'GERMANY', 'FRANCE', 'ITALY', 'SPAIN'].includes(m)) return '€';
+  if (['DE', 'FR', 'IT', 'ES', 'GERMANY', 'FRANCE', 'ITALY', 'SPAIN', 'EUR', 'EURO'].includes(m)) return '€';
   return '£';
 };
 

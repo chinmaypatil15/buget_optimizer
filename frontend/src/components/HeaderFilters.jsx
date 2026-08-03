@@ -8,7 +8,7 @@ const CATEGORY_OPTIONS = ['PETCARE', 'COFFEE'];
 const BRAND_OPTIONS = ['Felix', 'Gourmet', 'Purina One', 'Pro Plan', 'Bakers', 'Winalot', 'Dentalife'];
 const MEDIA_LEVER_OPTIONS = ['Search', 'Display'];
 
-export default function HeaderFilters({ filters, onConfirm }) {
+export default function HeaderFilters({ filters, onConfirm, onApplyFilters }) {
   // Local pending state - changes are only applied when user clicks Confirm
   const [tempFilters, setTempFilters] = useState(filters);
 
@@ -21,7 +21,10 @@ export default function HeaderFilters({ filters, onConfirm }) {
   };
 
   const handleConfirmClick = () => {
-    onConfirm(tempFilters);
+    const callback = onConfirm || onApplyFilters;
+    if (callback) {
+      callback(tempFilters);
+    }
   };
 
   const selectedMarkets = Array.isArray(tempFilters.market)
